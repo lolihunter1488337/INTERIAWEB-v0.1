@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import Reveal, { container, fadeUp } from "./components/Reveal.jsx";
+import Preloader from "./components/Preloader.jsx";
 import MagneticButton from "./components/MagneticButton.jsx";
 import Counter from "./components/Counter.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
@@ -342,8 +343,14 @@ function ScrollProgress() {
 }
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 2400);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <div className="relative">
+      <AnimatePresence>{loading && <Preloader key="preloader" />}</AnimatePresence>
       <div className="grain" />
       <ScrollProgress />
       <CursorGlow />
