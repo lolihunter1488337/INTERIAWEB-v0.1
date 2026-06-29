@@ -10,7 +10,12 @@ import ScrollText from "./components/ScrollText.jsx";
 import SpotlightCard from "./components/SpotlightCard.jsx";
 import Releases from "./components/Releases.jsx";
 import Accordion from "./components/Accordion.jsx";
-import { Cross, Tag, Marquee } from "./components/brand.jsx";
+import { Cross, Tag } from "./components/brand.jsx";
+import { PlayerProvider } from "./player.jsx";
+import Cursor from "./components/Cursor.jsx";
+import NowPlaying from "./components/NowPlaying.jsx";
+import SoundToggle from "./components/SoundToggle.jsx";
+import { playHover, playClick } from "./sound.js";
 
 const POPULAR = ["INTERIA!", "11NZZiDENT", "ORXCOOL", "XISAGE", "ClxwnSlxps", "decaying", "HADES!", "NIKOTREN", "KALXSH", "WORTAX!", "LASTCHANCE!", "ZANKYO"];
 const ALL_ARTISTS = ["11NZZiDENT","svdst","DXWNFAME","ZXLXN","decaying","Ethereal Love","LXHXNTER","KXNO1X","Mwwlkiy","SAMUELCG","XISAGE","davxdminxnko","HERXHEIMER","ClxwnSlxps","INTERIA!","ORXCOOL","MXDSTER","BXRNCLUEL","Lutsern","KALXSH","Prblmsss","ZANKYO","MXTXL","BACD","14thesenses","30moll","nxofitov","heesolo","KerAE","DJF1STRIK","DJ QEWER","SX1ENT","RXPSODIYA","WORTAX!","LASTCHANCE!","NIKOTREN","Verious","MXPAL","KAZORO","SLXRDX","Minx","DJ WRZ","1DONE","w1rtyz","WINTERvision","HADES!","WXSP","SKYSET!","STRATIUM!"];
@@ -146,9 +151,17 @@ function Section({ id, n, tag, title, lead, children, narrow }) {
 }
 
 function ArtistStrip() {
+  const row = [...ALL_ARTISTS, ...ALL_ARTISTS];
   return (
-    <div className="border-y border-white/[.06] py-3.5">
-      <Marquee items={ALL_ARTISTS} sep="✦" className="label text-muted" />
+    <div className="group relative overflow-hidden border-y border-white/[.06] py-6"
+      style={{ maskImage: "linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)", WebkitMaskImage: "linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)" }}>
+      <div className="flex w-max items-center animate-marquee group-hover:[animation-play-state:paused]" style={{ animationDuration: "90s" }}>
+        {row.map((a, i) => (
+          <span key={i} className="flex items-center text-3xl font-semibold tracking-tight text-faint transition-colors duration-300 hover:text-ink md:text-5xl">
+            {a}<span className="mx-7 text-lg text-white/15">✶</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -348,25 +361,38 @@ export default function App() {
     const t = setTimeout(() => setLoading(false), 2400);
     return () => clearTimeout(t);
   }, []);
+  useEffect(() => {
+    const over = (e) => { if (e.target.closest && e.target.closest("a,button,[role=button]")) playHover(); };
+    const click = () => playClick();
+    document.addEventListener("pointerover", over);
+    document.addEventListener("click", click);
+    return () => { document.removeEventListener("pointerover", over); document.removeEventListener("click", click); };
+  }, []);
   return (
-    <div className="relative">
-      <AnimatePresence>{loading && <Preloader key="preloader" />}</AnimatePresence>
-      <div className="grain" />
-      <ScrollProgress />
-      <CursorGlow />
-      <Nav />
-      <main>
-        <Hero />
-        <ArtistStrip />
-        <Manifesto />
-        <ReleasesSection />
-        <Offer />
-        <Process />
-        <Roster />
-        <Faq />
-        <Demo />
-      </main>
-      <Footer />
-    </div>
+    <PlayerProvider>
+      <div className="relative">
+        <AnimatePresence>{loading && <Preloader key="preloader" />}</AnimatePresence>
+        <div className="grain" />
+        <div className="crt" />
+        <Cursor />
+        <ScrollProgress />
+        <CursorGlow />
+        <Nav />
+        <main>
+          <Hero />
+          <ArtistStrip />
+          <Manifesto />
+          <ReleasesSection />
+          <Offer />
+          <Process />
+          <Roster />
+          <Faq />
+          <Demo />
+        </main>
+        <Footer />
+        <NowPlaying />
+        <SoundToggle />
+      </div>
+    </PlayerProvider>
   );
 }

@@ -28,3 +28,23 @@ body{ margin:0; background:#09090b; color:#fafafa; font-family:"Geist",sans-seri
 
 .grain{ position:fixed; inset:0; z-index:60; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.9%27 numOctaves=%273%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E"); }
+
+/* --- кастомный курсор: прячем системный на десктопе --- */
+@media (hover:hover) and (pointer:fine){
+  body{ cursor:none; }
+  a,button,[role=button]{ cursor:none; }
+}
+input,textarea,select{ cursor:text !important; }
+.cur{ position:fixed; top:0; left:0; z-index:95; pointer-events:none; border-radius:9999px; mix-blend-mode:difference; }
+.cur-dot{ width:6px; height:6px; background:#fff; margin:-3px 0 0 -3px; }
+.cur-ring{ width:34px; height:34px; border:1px solid #fff; margin:-17px 0 0 -17px; }
+
+/* --- очень лёгкий CRT-фликер + развёртка --- */
+.crt{ position:fixed; inset:0; z-index:59; pointer-events:none;
+  background-image:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px);
+  opacity:.35; mix-blend-mode:multiply; }
+.crt::after{ content:""; position:absolute; inset:0; background:#fff; opacity:0; animation:flick 7s steps(1) infinite; }
+@keyframes flick{ 0%,96.8%,100%{opacity:0} 97%{opacity:.02} 97.4%{opacity:0} 98.2%{opacity:.015} 98.5%{opacity:0} }
+
+/* --- маленький тумблер звука --- */
+.snd-toggle{ position:fixed; left:18px; bottom:18px; z-index:85; }

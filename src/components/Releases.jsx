@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import data from "../releases.json";
+import { usePlayer } from "../player.jsx";
 
 function Card({ r, onPlay }) {
   return (
-    <button onClick={() => onPlay(r)}
+    <button onClick={() => onPlay(r, data)}
       className="group relative block w-[128px] shrink-0 overflow-hidden rounded-lg border border-white/10 text-left md:w-[150px]">
       <img src={r.cover} alt={r.title} loading="lazy"
         className="aspect-square w-full object-cover grayscale transition duration-500 group-hover:scale-105 group-hover:grayscale-0" />
@@ -32,44 +31,13 @@ function Row({ list, reverse, onPlay }) {
   );
 }
 
-function PlayerModal({ r, onClose }) {
-  useEffect(() => {
-    const k = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", k);
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ""; };
-  }, [onClose]);
-  return (
-    <motion.div className="fixed inset-0 z-[90] flex items-center justify-center p-5"
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <motion.div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 bg-bg"
-        initial={{ scale: 0.92, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.95, y: 12, opacity: 0 }} transition={{ type: "spring", stiffness: 260, damping: 24 }}>
-        <div className="flex items-center justify-between gap-4 border-b border-white/10 p-4">
-          <div className="min-w-0">
-            <div className="truncate font-semibold">{r.title}</div>
-            <div className="label truncate text-muted">{r.artists}</div>
-          </div>
-          <button onClick={onClose} className="text-3xl leading-none text-muted transition-colors hover:text-ink">×</button>
-        </div>
-        <iframe title={r.title} src={`https://music.yandex.ru/iframe/album/${r.id}/`}
-          className="h-[180px] w-full" frameBorder="0" allow="autoplay" />
-        <a href={r.url} target="_blank" rel="noreferrer"
-          className="label block border-t border-white/10 p-3 text-center text-muted transition-colors hover:text-ink">Открыть на Яндекс.Музыке →</a>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export default function Releases() {
-  const [sel, setSel] = useState(null);
+  const { playOne } = usePlayer();
   const half = Math.ceil(data.length / 2);
   return (
     <div className="space-y-3">
-      <Row list={data.slice(0, half)} onPlay={setSel} />
-      <Row list={data.slice(half)} reverse onPlay={setSel} />
-      <AnimatePresence>{sel && <PlayerModal r={sel} onClose={() => setSel(null)} />}</AnimatePresence>
+      <Row list={data.slice(0, half)} onPlay={playOne} />
+      <Row list={data.slice(half)} reverse onPlay={playOne} />
     </div>
   );
 }
