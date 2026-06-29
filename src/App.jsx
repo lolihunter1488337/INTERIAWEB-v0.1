@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform, useMotionValue, AnimatePresence } from "framer-motion";
 import Reveal, { container, fadeUp } from "./components/Reveal.jsx";
 import Preloader from "./components/Preloader.jsx";
 import MagneticButton from "./components/MagneticButton.jsx";
