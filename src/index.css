@@ -48,3 +48,12 @@ input,textarea,select{ cursor:text !important; }
 
 /* --- маленький тумблер звука --- */
 .snd-toggle{ position:fixed; left:18px; bottom:18px; z-index:85; }
+
+/* --- мягкий scroll-snap по секциям (десктоп) --- */
+@media (min-width:768px) and (prefers-reduced-motion: no-preference){
+  html{ scroll-snap-type: y proximity; }
+  main > section[id]{ scroll-snap-align: start; scroll-margin-top: 72px; }
+}
+
+/* --- coming soon: блюр-тизер --- */
+.cs-blur{ filter: blur(9px) saturate(.7); opacity:.5; }

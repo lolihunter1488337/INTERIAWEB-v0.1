@@ -5,7 +5,8 @@ import Preloader from "./components/Preloader.jsx";
 import MagneticButton from "./components/MagneticButton.jsx";
 import Counter from "./components/Counter.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
-import Spotlight from "./components/Spotlight.jsx";
+import LiquidBackground from "./components/LiquidBackground.jsx";
+import ComingSoon from "./components/ComingSoon.jsx";
 import ScrollText from "./components/ScrollText.jsx";
 import SpotlightCard from "./components/SpotlightCard.jsx";
 import Releases from "./components/Releases.jsx";
@@ -79,7 +80,7 @@ function Logo3D() {
 }
 
 function Nav() {
-  const links = [["Лейбл", "#about"], ["Релизы", "#releases"], ["Условия", "#offer"], ["Артисты", "#roster"], ["FAQ", "#faq"]];
+  const links = [["Релизы", "#releases"], ["Условия", "#offer"], ["Артисты", "#roster"], ["Мерч", "#/merch"], ["Коллабы", "#/collabs"], ["FAQ", "#faq"]];
   return (
     <motion.header initial={{ y: -90, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
@@ -110,7 +111,6 @@ function Hero() {
 
   return (
     <section id="top" ref={ref} className="relative flex min-h-screen flex-col justify-center overflow-hidden px-5 pb-24 pt-32 md:px-8">
-      <Spotlight />
       <div className="pointer-events-none absolute inset-x-5 top-24 z-10 flex items-center justify-between md:inset-x-8">
         <span className="label text-muted">Независимый лейбл</span>
         <span className="label flex items-center gap-2 text-muted"><Cross /> EST. 2026</span>
@@ -290,19 +290,33 @@ function Faq() {
   );
 }
 
-function Field({ label, placeholder, area }) {
+function Field({ label, placeholder, area, name }) {
   const base = "w-full border-0 border-b border-white/15 bg-transparent px-0 py-3 text-[16px] text-ink outline-none transition focus:border-ink placeholder:text-faint";
   return (
     <label className="flex flex-col gap-2">
       <span className="label text-muted">{label}</span>
-      {area ? <textarea rows={3} placeholder={placeholder} className={base + " resize-none"} />
-            : <input type="text" placeholder={placeholder} className={base} />}
+      {area ? <textarea name={name} rows={3} placeholder={placeholder} className={base + " resize-none"} />
+            : <input name={name} type="text" placeholder={placeholder} className={base} />}
     </label>
   );
 }
 
 function Demo() {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState("idle");
+  const submit = async (e) => {
+    e.preventDefault();
+    if (status === "sending") return;
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries());
+    setStatus("sending");
+    try {
+      const r = await fetch("/api/demo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      const j = await r.json().catch(() => ({ ok: false }));
+      if (j.ok) { setStatus("ok"); form.reset(); } else setStatus("error");
+    } catch { setStatus("error"); }
+    setTimeout(() => setStatus("idle"), 4000);
+  };
+  const labelBtn = { idle: "Отправить демо →", sending: "Отправляем…", ok: "Отправлено ✓", error: "Ошибка — напиши в ТГ" }[status];
   return (
     <section id="demo" className="relative overflow-hidden px-5 py-28 md:px-8 md:py-36">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
@@ -322,19 +336,19 @@ function Demo() {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <motion.form onSubmit={(e) => { e.preventDefault(); setSent(true); setTimeout(() => setSent(false), 2600); }}
-            className="flex flex-col gap-7">
+          <motion.form onSubmit={submit} className="flex flex-col gap-7">
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
             <div className="grid gap-7 sm:grid-cols-2">
-              <Field label="Имя / ник" placeholder="INTERIA!" />
-              <Field label="Контакт" placeholder="@telegram" />
+              <Field name="name" label="Имя / ник" placeholder="INTERIA!" />
+              <Field name="contact" label="Контакт" placeholder="@telegram" />
             </div>
-            <Field label="Ссылка на трек" placeholder="SoundCloud, Я.Диск, Drive..." />
-            <Field label="О себе" placeholder="Жанр, вайб, площадки..." area />
-            <motion.button type="submit" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-              className="btn-fill mt-2 flex items-center justify-center overflow-hidden rounded-full px-8 py-4 text-[15px] font-semibold">
+            <Field name="link" label="Ссылка на трек" placeholder="SoundCloud, Я.Диск, Drive..." />
+            <Field name="about" label="О себе" placeholder="Жанр, вайб, площадки..." area />
+            <motion.button type="submit" disabled={status === "sending"} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
+              className="btn-fill mt-2 flex items-center justify-center overflow-hidden rounded-full px-8 py-4 text-[15px] font-semibold disabled:opacity-70">
               <AnimatePresence mode="wait" initial={false}>
-                <motion.span key={sent ? "ok" : "send"} initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -18, opacity: 0 }}>
-                  {sent ? "Отправлено ✓" : "Отправить демо →"}
+                <motion.span key={status} initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -18, opacity: 0 }}>
+                  {labelBtn}
                 </motion.span>
               </AnimatePresence>
             </motion.button>
@@ -372,6 +386,12 @@ function ScrollProgress() {
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const [route, setRoute] = useState(typeof window !== "undefined" ? window.location.hash : "");
+  useEffect(() => {
+    const f = () => { setRoute(window.location.hash); window.scrollTo(0, 0); };
+    window.addEventListener("hashchange", f);
+    return () => window.removeEventListener("hashchange", f);
+  }, []);
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 2400);
     return () => clearTimeout(t);
@@ -386,6 +406,7 @@ export default function App() {
   return (
     <PlayerProvider>
       <div className="relative">
+        <LiquidBackground />
         <AnimatePresence>{loading && <Preloader key="preloader" />}</AnimatePresence>
         <div className="grain" />
         <div className="crt" />
@@ -393,18 +414,22 @@ export default function App() {
         <ScrollProgress />
         <CursorGlow />
         <Nav />
-        <main>
-          <Hero />
-          <ArtistStrip />
-          <Manifesto />
-          <ReleasesSection />
-          <Offer />
-          <Process />
-          <Roster />
-          <Faq />
-          <Demo />
-        </main>
-        <Footer />
+        {route === "#/merch" ? <ComingSoon variant="merch" />
+          : route === "#/collabs" ? <ComingSoon variant="collabs" />
+          : (<>
+              <main>
+                <Hero />
+                <ArtistStrip />
+                <Manifesto />
+                <ReleasesSection />
+                <Offer />
+                <Process />
+                <Roster />
+                <Faq />
+                <Demo />
+              </main>
+              <Footer />
+            </>)}
         <NowPlaying />
         <SoundToggle />
       </div>
