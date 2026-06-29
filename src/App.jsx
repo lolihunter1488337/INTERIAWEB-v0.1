@@ -59,7 +59,23 @@ function ChromeMark({ className }) {
 function Logo({ className }) {
   const [err, setErr] = useState(false);
   if (err) return <ChromeMark className={className} />;
-  return <img src="./logo.jpg" alt="INTERIA!" onError={() => setErr(true)} className={"logo-blend " + className} />;
+  return <img src="./logo.png" alt="INTERIA!" onError={() => setErr(true)} className={className} />;
+}
+
+function Logo3D() {
+  const mx = useMotionValue(0), my = useMotionValue(0);
+  const rx = useSpring(useTransform(my, [-0.5, 0.5], [14, -14]), { stiffness: 150, damping: 15 });
+  const ry = useSpring(useTransform(mx, [-0.5, 0.5], [-14, 14]), { stiffness: 150, damping: 15 });
+  return (
+    <motion.div
+      onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); mx.set((e.clientX - r.left) / r.width - 0.5); my.set((e.clientY - r.top) / r.height - 0.5); }}
+      onMouseLeave={() => { mx.set(0); my.set(0); }}
+      style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d", transformPerspective: 800 }}
+      className="relative mx-auto w-[clamp(200px,30vw,380px)]">
+      <div className="absolute inset-0 -z-10 rounded-full blur-3xl" style={{ background: "radial-gradient(circle,rgba(255,255,255,.20),transparent 62%)" }} />
+      <Logo className="animate-float w-full object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,.65)]" />
+    </motion.div>
+  );
 }
 
 function Nav() {
@@ -102,9 +118,8 @@ function Hero() {
 
       <motion.div style={{ y, opacity: op }} className="relative z-10 mx-auto w-full max-w-4xl text-center">
         <motion.div variants={container(0.13)} initial="hidden" animate="show">
-          <motion.div variants={fadeUp} className="relative mx-auto mb-8 w-[clamp(120px,16vw,190px)]">
-            <div className="absolute inset-0 -z-10 rounded-full blur-3xl" style={{ background: "radial-gradient(circle,rgba(255,255,255,.22),transparent 65%)" }} />
-            <Logo className="animate-float w-full object-contain" />
+          <motion.div variants={fadeUp} className="mb-8">
+            <Logo3D />
           </motion.div>
 
           <motion.h1 variants={fadeUp} className="text-[clamp(56px,13vw,150px)] font-bold leading-[.85] tracking-[-0.04em]">

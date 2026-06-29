@@ -1,13 +1,13 @@
 let enabled = (typeof localStorage !== "undefined") ? localStorage.getItem("interia-sound") !== "off" : true;
 let ctx;
 
-function tone(freq, dur, gain) {
+function tone(freq, dur, gain, type) {
   if (!enabled || typeof window === "undefined") return;
   try {
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === "suspended") ctx.resume();
     const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = "sine"; o.frequency.value = freq;
+    o.type = type || "sine"; o.frequency.value = freq;
     g.gain.value = gain; o.connect(g); g.connect(ctx.destination);
     const t = ctx.currentTime;
     o.start(t);
@@ -18,5 +18,6 @@ function tone(freq, dur, gain) {
 
 export const playHover = () => tone(900, 0.035, 0.012);
 export const playClick = () => tone(420, 0.07, 0.03);
+export const chime = () => { [659, 880, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.22, 0.05, "triangle"), i * 95)); };
 export const isSoundOn = () => enabled;
 export const setSound = (v) => { enabled = v; try { localStorage.setItem("interia-sound", v ? "on" : "off"); } catch (e) {} };
