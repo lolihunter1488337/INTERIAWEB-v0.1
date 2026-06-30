@@ -1,4 +1,4 @@
-// Vercel Serverless Function — приём демки и отправка в Telegram (нескольким получателям)
+// Vercel Serverless Function — приём демки и отправка в Telegram-группу
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ ok: false, error: "method" });
   try {
@@ -8,9 +8,13 @@ export default async function handler(req, res) {
     if (website) return res.status(200).json({ ok: true }); // honeypot
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chats = String(process.env.TELEGRAM_CHAT_ID || "")
-      .split(",").map((s) => s.trim()).filter(Boolean);
-    if (!token || !chats.length) return res.status(500).json({ ok: false, error: "not_configured" });
+    if (!token) return res.status(500).json({ ok: false, error: "no_token" });
+
+    // Получатели заявок (можно добавить ещё id через запятую). Группа INTERIA FORM:
+    const chats = ["-1003935357575"];
+    // плюс всё, что задано в переменной окружения (необязательно):
+    String(process.env.TELEGRAM_CHAT_ID || "").split(",").map((s) => s.trim()).filter(Boolean)
+      .forEach((id) => { if (!chats.includes(id)) chats.push(id); });
 
     const esc = (s) => String(s).slice(0, 1000);
     const text =
