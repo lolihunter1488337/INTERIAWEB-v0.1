@@ -307,6 +307,8 @@ function Demo() {
     e.preventDefault();
     if (status === "sending") return;
     const form = e.currentTarget;
+    const isLocal = /localhost|127\.0\.0\.1/.test(location.hostname);
+    if (isLocal) { setStatus("local"); setTimeout(() => setStatus("idle"), 4500); return; }
     const data = Object.fromEntries(new FormData(form).entries());
     setStatus("sending");
     try {
@@ -316,7 +318,7 @@ function Demo() {
     } catch { setStatus("error"); }
     setTimeout(() => setStatus("idle"), 4000);
   };
-  const labelBtn = { idle: "Отправить демо →", sending: "Отправляем…", ok: "Отправлено ✓", error: "Ошибка — напиши в ТГ" }[status];
+  const labelBtn = { idle: "Отправить демо →", sending: "Отправляем…", ok: "Отправлено ✓", error: "Ошибка — напиши @interialabel", local: "Только на сайте (не локально)" }[status];
   return (
     <section id="demo" className="relative overflow-hidden px-5 py-28 md:px-8 md:py-36">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
