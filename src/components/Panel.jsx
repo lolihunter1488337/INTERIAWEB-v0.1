@@ -231,7 +231,7 @@ export default function Panel() {
 
   if (!ok) {
     return (
-      <div className="grid min-h-screen place-items-center bg-black px-5">
+      <div className="panel-scope grid min-h-screen place-items-center bg-black px-5">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -251,7 +251,7 @@ export default function Panel() {
   }
 
   return (
-    <div className="min-h-screen bg-black px-4 py-6 text-white md:px-8">
+    <div className="panel-scope min-h-screen bg-black px-4 py-6 text-white md:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>

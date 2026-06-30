@@ -58,7 +58,16 @@
 - Хранилище v0 = localStorage (на устройстве). СЛЕДУЮЩИЙ ШАГ: общий бэкенд (Vercel KV/Upstash),
   чтобы вся команда видела одни и те же данные + серверная проверка пароля.
 
+## A&R-автопоиск артистов (инструмент)
+- Бэкенд: `api/ya.js` — серверный прокси к Яндекс.Музыке. Токен ТОЛЬКО в env `YANDEX_MUSIC_TOKEN` (Vercel), НЕ в коде/гите.
+- Действия: searchPlaylists(q) · playlistArtists(owner,kind) · chartArtists · artists(ids) → brief-info даёт `lastMonthListeners` + `lastMonthListenersDelta` + `links` (соцсети, иногда Telegram/VK).
+- Фронт: вкладка «🔎 Поиск артистов» в Panel.jsx — поиск плейлиста/чарт → скан артистов батчами по 15 (прогресс) → фильтр по слушателям (клиент) → таблица + контакты + CSV.
+- Работает ТОЛЬКО на проде (на localhost /api нет). Для включения нужен env-токен (см. ниже).
+- Токен Яндекса (OAuth, ~1 год) получали через oauth.yandex.ru client_id=23cabbbdc6cd418abb4b39c32c41195d.
+- TODO: добор контактов из ВК для артистов без links; шаблоны аутрича для A&R.
+
 ## 📓 Журнал правок сайта
+- 2026-07-01: A&R-автопоиск артистов через Яндекс.Музыку (api/ya.js + вкладка в панели). Нужен env YANDEX_MUSIC_TOKEN.
 - 2026-07-01: сайт поставлен на свой домен **interiarecords.com** (Timeweb DNS → Vercel: A @ → 216.198.79.1, CNAME www → vercel-dns; удалили AAAA Timeweb). SSL от Vercel поднялся.
 - 2026-07-01: новый **OG-превью** — из хром-логотипа ЛОГО3д.png сделал public/og.jpg 1200×630 (jimp cover). Мета: og:title=INTERIA!, og:description=слоган «Мы создаём будущее музыки. Остальное — история.», абсолютные og/twitter image (?v=2), добавил og:url + canonical на www.interiarecords.com. Старый красный постер выпилен. Telegram кэширует OG — обновлять через @WebpageBot.
 - 2026-06-30: добавлена приватная внутренняя панель `#/panel` (трекер релизов + задач, v0 на localStorage).
