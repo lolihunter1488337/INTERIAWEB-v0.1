@@ -132,8 +132,8 @@ function Hero() {
         </motion.div>
       </motion.div>
 
-      <motion.div style={{ opacity: op }} className="relative z-10 mx-auto mt-12 grid w-full max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:mt-16 sm:grid-cols-4">
-        {[["90", "% артисту"], ["10", "% лейблу"], ["33", "релиза"], ["50", "+ артистов"]].map(([n, l], i) => (
+      <motion.div style={{ opacity: op }} className="relative z-10 mx-auto mt-12 grid w-full max-w-2xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:mt-16">
+        {[["90", "% артисту"], ["10", "% лейблу"], ["60", "+ артистов"]].map(([n, l], i) => (
           <div key={i} className="grid min-h-[104px] place-items-center bg-bg px-3 py-5 text-center">
             <div>
               <div className="text-3xl font-bold tracking-tight md:text-4xl"><Counter to={parseInt(n)} /></div>
@@ -255,24 +255,60 @@ function Process() {
   );
 }
 
+const ROSTER = [
+  { name: "1NZZiDENT", count: "2.5M", platform: "yandex" },
+  { name: "svdst", count: "2M", platform: "spotify" },
+  { name: "decaying", count: "1M", platform: "spotify" },
+  { name: "KXNO1X", count: "600K", platform: "spotify" },
+  { name: "ØRXCOOL", count: "400K", platform: "yandex" },
+  { name: "DXWNFAME", count: "400K", platform: "yandex" },
+  { name: "SAMUELCG", count: "250K", platform: "spotify" },
+  { name: "LXHXNTER", count: "200K", platform: "yandex" },
+  { name: "BACD", count: "200K", platform: "spotify" },
+  { name: "ZXLXN", count: "200K", platform: "spotify" },
+  { name: "XISAGE", count: "150K", platform: "yandex" },
+  { name: "14thesenses", count: "150K", platform: "yandex" },
+  { name: "Ethereal Love", count: "120K", platform: "yandex" },
+  { name: "BXRNCLUEL", count: "120K", platform: "spotify" },
+  { name: "ClxwnSlxps", count: "100K", platform: "spotify" },
+  { name: "Mwwlkiy", count: "100K", platform: "yandex" },
+  { name: "MXTXL", count: "100K", platform: "spotify" },
+  { name: "davxdminxnko", count: "100K", platform: "yandex" },
+];
+
+function SpotifyIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-label="Spotify">
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+    </svg>
+  );
+}
+
+function YandexIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-label="Yandex Music">
+      <path d="M12 0C5.3726 0 0 5.3726 0 12s5.3726 12 12 12 12-5.3726 12-12S18.6274 0 12 0zm1.6332 4.8h1.9536v14.4h-1.9536v-9.6h-.048c-.5712 4.9344-2.0832 8.328-4.6512 9.6l-.336-.6864c1.776-1.0608 2.9088-3.7008 3.456-7.4448-.984.9456-2.184 1.5168-3.144 1.5168v-.7872c1.104 0 2.4-.96 3.36-2.232V4.8z"/>
+    </svg>
+  );
+}
+
 function Roster() {
   return (
     <Section id="roster" n="05" tag="Артисты" title="Ростер"
-      lead="С нами уже 50+ артистов. Несколько имён, которых ты точно слышал.">
-      <motion.div variants={container(0.06)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-70px" }}
+      lead="С нами более 60 артистов. Вот несколько имён, которых ты точно слышал.">
+      <motion.div variants={container(0.05)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-70px" }}
         className="grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:grid-cols-2 lg:grid-cols-3">
-        {POPULAR.map((a, i) => (
-          <motion.div key={a} variants={fadeUp}
-            className="group flex items-center justify-between gap-3 bg-bg px-6 py-5 transition-colors hover:bg-white/[.03]">
-            <span className="text-lg font-semibold tracking-tight transition-colors group-hover:text-ink md:text-xl">{a}</span>
-            <span className="label label-dim">{String(i + 1).padStart(2, "0")}</span>
+        {ROSTER.map((a) => (
+          <motion.div key={a.name} variants={fadeUp}
+            className="group flex items-center justify-between gap-4 bg-bg px-6 py-5 transition-colors hover:bg-white/[.03]">
+            <span className="truncate text-lg font-semibold tracking-tight transition-colors group-hover:text-ink md:text-xl">{a.name}</span>
+            <span className="flex shrink-0 items-center gap-2 text-faint transition-colors group-hover:text-muted">
+              {a.platform === "spotify" ? <SpotifyIcon className="h-[18px] w-[18px]" /> : <YandexIcon className="h-[18px] w-[18px]" />}
+              <span className="label label-dim tracking-wide">{a.count}</span>
+            </span>
           </motion.div>
         ))}
       </motion.div>
-      <Reveal className="mt-8 border-t border-white/[.08] pt-6">
-        <div className="label text-muted">+ ещё {REST.length} артистов в ростере</div>
-        <p className="mt-3 max-w-4xl text-[14px] leading-relaxed text-faint">{REST.join("  ·  ")}</p>
-      </Reveal>
     </Section>
   );
 }
@@ -380,7 +416,18 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [route, setRoute] = useState(typeof window !== "undefined" ? window.location.hash : "");
   useEffect(() => {
-    const f = () => { setRoute(window.location.hash); window.scrollTo(0, 0); };
+    const f = () => {
+      const h = window.location.hash;
+      setRoute(h);
+      if (h.startsWith("#/")) {
+        window.scrollTo(0, 0);
+      } else if (h.length > 1) {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(h.slice(1));
+          if (el) el.scrollIntoView({ behavior: "smooth" });
+        });
+      }
+    };
     window.addEventListener("hashchange", f);
     return () => window.removeEventListener("hashchange", f);
   }, []);
