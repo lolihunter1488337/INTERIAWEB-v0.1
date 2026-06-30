@@ -27,7 +27,7 @@
 - src/main.jsx — рендер + ErrorBoundary (показывает ошибку вместо белого экрана)
 - src/App.jsx — все секции + hash-роутинг (#/merch, #/collabs)
 - src/index.css — глоб. стили, утилиты (.chrome .label .glass .cur .crt .grain)
-- tailwind.config.js — шрифты (display=Geist, mono=Geist Mono, serif=Instrument Serif), анимации
+- tailwind.config.js — шрифты: ВСЕ на **Space Grotesk** (display/sans/mono/serif), анимации (marquee/shine/float)
 - src/releases.json — 33 реальных релиза (с api.music.yandex.net/labels/6401624)
 - src/components/:
   - LiquidBackground.jsx — canvas-фон: пыль + хром + аудио-пульс (когда играет плеер)
@@ -49,6 +49,22 @@
   - .well-known/security.txt
 - api/demo.js — приём формы -> Telegram-группа (chat_id зашит в коде = GROUP_CHAT_ID; env игнор)
 - vercel.json — security headers (OWASP/Helmet-уровень) + framework=vite
+
+## 📓 Журнал правок сайта
+- 2026-06-30: **шрифты** — всё перевели на Space Grotesk (index.html link, tailwind.config.js, index.css: body/.serif/.label).
+- 2026-06-30: **Hero** — убрали подзаголовок «будущее тёмной электроники» и строку жанров (GENRES). Это убрало наезд кнопок на статы.
+- 2026-06-30: **Hero-статы** — убрали плитку «33 релиза», «50»→«60», сетка grid-cols-3.
+- 2026-06-30: **Манифест** — текст: «Мы создаём будущее музыки. Остальное — история.»
+- 2026-06-30: **Условия (Offer)** — «Что получает артист», 3 пункта (90% роялти / Разработка обложки / Питчинг релизов), сетка lg:grid-cols-3.
+- 2026-06-30: **Процесс** — «От демозаписи до выпуска релиза» + подзаголовок, 4 шага (рассмотрение/согласование/договор/выпуск).
+- 2026-06-30: **Ростер** — переписан: массив ROSTER (18 артистов) со слушателями и логотипами Spotify/Yandex (инлайн-SVG в App.jsx, монохром currentColor). Ховер: Spotify→зелёный glow, Yandex→жёлтый glow. Старый POPULAR/REST блок убран (POPULAR/ALL_ARTISTS ещё юзаются в ArtistStrip).
+- 2026-06-30: **Лого Yandex Music** — звезда-вспышка (сгенерированный 12-лучевой path).
+- 2026-06-30: **Форма** — «Готовы выпустить свой релиз?» (без serif-span), описание про рассмотрение демо; поля: Имя/псевдоним, Контакт для связи, Ссылка на релиз, Доп. информация. Контакты: interiarecordsru@gmail.com / @ceo_INTERIA.
+- 2026-06-30: **Футер** — убрали Яндекс/Демо/info (оставили © 2026).
+- 2026-06-30: **FAQ** — «На каких платформах выходят релизы?» + обновлён ответ про карточки артистов.
+- 2026-06-30: **Баг кнопок** (фикс) — в App.jsx hashchange делал scrollTo(0,0) на ЛЮБОЙ якорь → первый клик кидал вверх. Теперь scrollTo только для SPA-роутов (#/...), а секции скроллятся через scrollIntoView в rAF.
+- 2026-06-30: **Мобилка** — добавили бургер-меню в Nav (md:hidden), кнопку демо в шапке спрятали на <sm; курсор и cur-glow скрыты на тач (`@media (hover:none)` в index.css).
+- 2026-06-30: **Анимации лент на мобиле** (фикс) — marquee замирал из-за залипания :hover (пауза) + iOS mask-image. Лечение в index.css: `@media (hover:none){ .animate-marquee{ animation-play-state:running !important } }` + translate3d/will-change для GPU-слоя.
 
 ## Безопасность
 - Строгий CSP, HSTS, frame-ancestors none, COOP/CORP, nosniff, Permissions-Policy — в vercel.json

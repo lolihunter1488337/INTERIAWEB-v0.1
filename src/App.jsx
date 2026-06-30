@@ -7,6 +7,7 @@ import Counter from "./components/Counter.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
 import LiquidBackground from "./components/LiquidBackground.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
+import Panel from "./components/Panel.jsx";
 import ScrollText from "./components/ScrollText.jsx";
 import SpotlightCard from "./components/SpotlightCard.jsx";
 import Releases from "./components/Releases.jsx";
@@ -470,6 +471,8 @@ export default function App() {
     document.addEventListener("click", click);
     return () => { document.removeEventListener("pointerover", over); document.removeEventListener("click", click); };
   }, []);
+  if (route === "#/panel") return <Panel />;
+
   return (
     <PlayerProvider>
       <div className="relative">
