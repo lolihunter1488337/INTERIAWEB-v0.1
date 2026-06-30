@@ -41,8 +41,8 @@ const FAQ = [
   { q: "Сколько я получаю?", a: "90% доходов — твои, 10% — лейблу. Выше среднерыночных условий." },
   { q: "Кто делает обложку?", a: "Мы. Уникальный кавер-арт включён в каждый релиз бесплатно." },
   { q: "Права защищены?", a: "Да. Каждый релиз — отдельный договор с полной юридической силой." },
-  { q: "Какие площадки?", a: "Spotify, Apple Music, YouTube Music, VK, Звук, SoundCloud и другие. Питчинг на нас." },
-  { q: "Что за карточки артистов?", a: "Иногда добавляем карточки наших артистов для алгоритмов. Твоя доля не меняется." },
+  { q: "На каких платформах выходят релизы?", a: "На всех цифровых сервисах и стриминговых платформах международного рынка." },
+  { q: "Что за карточки артистов?", a: "На часть релизов добавляем карточки наших артистов (1NZZiDENT, ØRXCOOL, ClxwnSlxps, INTERIA!, XISAGE) — это усиливает алгоритмическое продвижение и питчинг. На долю артиста никак не влияет." },
 ];
 
 function ChromeMark({ className }) {
@@ -322,13 +322,13 @@ function Demo() {
         <Reveal>
           <Tag n="07">Демо</Tag>
           <h2 className="mt-5 text-[clamp(40px,7vw,84px)] font-bold leading-[.9] tracking-[-0.04em]">
-            Готовы выпустить свой <span className="serif font-normal text-muted">релиз?</span>
+            Готовы выпустить свой релиз?
           </h2>
           <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">Направьте демозапись на рассмотрение нашей команде. Мы внимательно изучим материал и свяжемся с вами.</p>
           <div className="label mt-8 space-y-1.5 text-muted">
             <div className="text-ink">Контакт</div>
-            <div>info@interialabel.com</div>
-            <div>DM @interialabel</div>
+            <div>interiarecordsru@gmail.com</div>
+            <div>@ceo_INTERIA</div>
           </div>
         </Reveal>
 
@@ -336,7 +336,7 @@ function Demo() {
           <motion.form onSubmit={submit} className="flex flex-col gap-7">
             <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
             <div className="grid gap-7 sm:grid-cols-2">
-              <Field name="name" label="Имя / псевдоним" placeholder="Укажите имя исполнителя или творческий псевдоним." />
+              <Field name="name" label="Имя / псевдоним" placeholder="Имя или псевдоним" />
               <Field name="contact" label="Контакт для связи" placeholder="@telegram или email" />
             </div>
             <Field name="link" label="Ссылка на релиз" placeholder="SoundCloud, Google Drive, Dropbox, Яндекс Диск или другой сервис с открытым доступом." />
@@ -363,11 +363,6 @@ function Footer() {
         <div className="flex items-center gap-2.5">
           <Logo className="h-7 w-7 object-contain" />
           <span className="text-[15px] font-semibold tracking-tight">INTERIA!</span>
-        </div>
-        <div className="label flex flex-wrap gap-6 text-muted">
-          <a href="https://music.yandex.ru/label/6401624" target="_blank" rel="noreferrer" className="hover:text-ink">Яндекс.Музыка</a>
-          <a href="#demo" className="hover:text-ink">Демо</a>
-          <span>info@interialabel.com</span>
         </div>
         <span className="label label-dim">© 2026</span>
       </div>
