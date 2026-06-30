@@ -92,21 +92,23 @@ function Tracker({ cols, rows, setRows }) {
               <tr><td colSpan={cols.length + 1} className="px-3 py-6 text-center text-white/30">Пусто. Нажми «+ Строка».</td></tr>
             )}
             {list.map((r, i) => (
-              <tr key={i} className="hover:bg-white/[.02]">
+              <tr key={i} className="border-b border-white/[.05] transition-colors odd:bg-white/[.012] hover:bg-white/[.04]">
                 {cols.map((c) => (
-                  <td key={c.key} className="border-b border-white/[.06] px-1.5 py-1">
+                  <td key={c.key} className="px-2 py-1.5 align-middle">
                     {c.type === "select" ? (
-                      <select value={r[c.key]} onChange={(e) => update(i, c.key, e.target.value)} className="w-full bg-transparent px-2 py-1.5 text-white outline-none">
-                        <option value="" className="bg-zinc-900"></option>
+                      <select value={r[c.key]} onChange={(e) => update(i, c.key, e.target.value)}
+                        className="w-full min-w-[130px] rounded-md border border-white/10 bg-white/[.04] px-2.5 py-2 text-white outline-none transition focus:border-white/40 focus:bg-white/[.08]">
+                        <option value="" className="bg-zinc-900">— {c.label} —</option>
                         {c.options.map((o) => (<option key={o} value={o} className="bg-zinc-900">{o}</option>))}
                       </select>
                     ) : (
-                      <input value={r[c.key]} onChange={(e) => update(i, c.key, e.target.value)} className="w-full min-w-[90px] bg-transparent px-2 py-1.5 text-white outline-none placeholder:text-white/20" />
+                      <input value={r[c.key]} onChange={(e) => update(i, c.key, e.target.value)} placeholder={c.label}
+                        className="w-full min-w-[120px] rounded-md border border-white/10 bg-white/[.04] px-2.5 py-2 text-white outline-none transition placeholder:text-white/30 focus:border-white/40 focus:bg-white/[.08]" />
                     )}
                   </td>
                 ))}
-                <td className="border-b border-white/[.06] px-2 text-center">
-                  <button onClick={() => del(i)} className="text-white/30 hover:text-red-400" title="Удалить">✕</button>
+                <td className="px-2 text-center align-middle">
+                  <button onClick={() => del(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 transition-colors hover:bg-red-500/15 hover:text-red-400" title="Удалить">✕</button>
                 </td>
               </tr>
             ))}
