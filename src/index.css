@@ -38,6 +38,8 @@ input,textarea,select{ cursor:text !important; }
 .cur{ position:fixed; top:0; left:0; z-index:95; pointer-events:none; border-radius:9999px; mix-blend-mode:difference; }
 .cur-dot{ width:6px; height:6px; background:#fff; margin:-3px 0 0 -3px; }
 .cur-ring{ width:34px; height:34px; border:1px solid #fff; margin:-17px 0 0 -17px; }
+/* на тач-устройствах кастомный курсор и его свечение не нужны */
+@media (hover:none),(pointer:coarse){ .cur,.cur-glow{ display:none !important; } }
 
 /* --- очень лёгкий CRT-фликер + развёртка --- */
 .crt{ position:fixed; inset:0; z-index:59; pointer-events:none;

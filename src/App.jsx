@@ -80,12 +80,13 @@ function Logo3D() {
 
 function Nav() {
   const links = [["Релизы", "#releases"], ["Условия", "#offer"], ["Артисты", "#roster"], ["Мерч", "#/merch"], ["Коллабы", "#/collabs"], ["FAQ", "#faq"]];
+  const [open, setOpen] = useState(false);
   return (
     <motion.header initial={{ y: -90, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       className="fixed inset-x-0 top-0 z-50 border-b border-white/[.06] bg-bg/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 md:px-8">
-        <a href="#top" className="flex items-center gap-2.5">
+        <a href="#top" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           <Logo className="h-7 w-7 object-contain" />
           <span className="text-[15px] font-semibold tracking-tight">INTERIA!</span>
         </a>
@@ -94,10 +95,34 @@ function Nav() {
             <a key={h} href={h} className="transition-colors hover:text-ink">{l}</a>
           ))}
         </nav>
-        <MagneticButton href="#demo" className="btn-fill rounded-full px-5 py-2 text-[13px] font-semibold">
-          Прислать демо
-        </MagneticButton>
+        <div className="flex items-center gap-3">
+          <MagneticButton href="#demo" className="btn-fill hidden rounded-full px-5 py-2 text-[13px] font-semibold sm:inline-flex">
+            Прислать демо
+          </MagneticButton>
+          <button onClick={() => setOpen((o) => !o)} aria-label="Меню" aria-expanded={open}
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-ink transition-colors hover:bg-white/5 md:hidden">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {open ? <path d="M6 6l12 12M18 6L6 18" /> : <><path d="M3 7h18" /><path d="M3 12h18" /><path d="M3 17h18" /></>}
+            </svg>
+          </button>
+        </div>
       </div>
+      <AnimatePresence>
+        {open && (
+          <motion.nav initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden border-t border-white/[.06] md:hidden">
+            <div className="flex flex-col px-5 py-2">
+              {links.map(([l, h]) => (
+                <a key={h} href={h} onClick={() => setOpen(false)}
+                  className="border-b border-white/[.05] py-3.5 text-[15px] text-muted transition-colors hover:text-ink">{l}</a>
+              ))}
+              <a href="#demo" onClick={() => setOpen(false)}
+                className="btn-fill mt-3 rounded-full px-5 py-3 text-center text-[14px] font-semibold">Прислать демо</a>
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
@@ -287,7 +312,7 @@ function SpotifyIcon({ className }) {
 function YandexIcon({ className }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-label="Yandex Music">
-      <path d="M12 0C5.3726 0 0 5.3726 0 12s5.3726 12 12 12 12-5.3726 12-12S18.6274 0 12 0zm1.6332 4.8h1.9536v14.4h-1.9536v-9.6h-.048c-.5712 4.9344-2.0832 8.328-4.6512 9.6l-.336-.6864c1.776-1.0608 2.9088-3.7008 3.456-7.4448-.984.9456-2.184 1.5168-3.144 1.5168v-.7872c1.104 0 2.4-.96 3.36-2.232V4.8z"/>
+      <path d="M12.00 1.00L12.70 9.39L16.60 4.03L13.91 10.09L21.87 6.30L14.61 11.30L20.60 12.00L14.61 12.70L21.53 17.50L13.91 13.91L16.70 20.14L12.70 14.61L12.00 23.50L11.30 14.61L7.80 19.27L10.09 13.91L2.47 17.50L9.39 12.70L2.80 12.00L9.39 11.30L2.13 6.30L10.09 10.09L7.70 4.55L11.30 9.39Z"/>
     </svg>
   );
 }
@@ -302,9 +327,12 @@ function Roster() {
           <motion.div key={a.name} variants={fadeUp}
             className="group flex items-center justify-between gap-4 bg-bg px-6 py-5 transition-colors hover:bg-white/[.03]">
             <span className="truncate text-lg font-semibold tracking-tight transition-colors group-hover:text-ink md:text-xl">{a.name}</span>
-            <span className="flex shrink-0 items-center gap-2 text-faint transition-colors group-hover:text-muted">
+            <span className={"flex shrink-0 cursor-pointer items-center gap-2 text-faint transition-all duration-300 "
+              + (a.platform === "spotify"
+                  ? "hover:text-[#1DB954] hover:[filter:drop-shadow(0_0_7px_rgba(29,185,84,.75))]"
+                  : "hover:text-[#FFCC00] hover:[filter:drop-shadow(0_0_7px_rgba(255,204,0,.75))]")}>
               {a.platform === "spotify" ? <SpotifyIcon className="h-[18px] w-[18px]" /> : <YandexIcon className="h-[18px] w-[18px]" />}
-              <span className="label label-dim tracking-wide">{a.count}</span>
+              <span className="label tracking-wide">{a.count}</span>
             </span>
           </motion.div>
         ))}

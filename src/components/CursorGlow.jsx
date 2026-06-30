@@ -15,7 +15,7 @@ export default function CursorGlow() {
     <motion.div
       aria-hidden
       style={{ left: sx, top: sy }}
-      className="pointer-events-none fixed z-[1] h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
+      className="cur-glow pointer-events-none fixed z-[1] h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl"
     >
       <div className="h-full w-full rounded-full"
         style={{ background: "radial-gradient(circle, rgba(180,188,210,.10), transparent 60%)" }} />
