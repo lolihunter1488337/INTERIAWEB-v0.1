@@ -59,3 +59,10 @@ input,textarea,select{ cursor:text !important; }
 
 /* --- coming soon: блюр-тизер --- */
 .cs-blur{ filter: blur(9px) saturate(.7); opacity:.5; }
+
+/* --- бегущие ленты (релизы + ники): чиним мобилку --- */
+/* GPU-слой + translate3d, иначе на iOS Safari с mask-image анимация замирает */
+.animate-marquee{ will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+@keyframes marquee{ from{ transform: translate3d(0,0,0); } to{ transform: translate3d(-50%,0,0); } }
+/* на тач-устройствах :hover «залипает» после тапа и останавливает ленту — форсим движение */
+@media (hover:none){ .animate-marquee{ animation-play-state: running !important; } }
