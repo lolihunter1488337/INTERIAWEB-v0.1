@@ -101,6 +101,7 @@ function ArtistSearch() {
   const [scanned, setScanned] = useState([]);
   const [err, setErr] = useState("");
   const [note, setNote] = useState("");
+  const [onlyContacts, setOnlyContacts] = useState(true);
 
   const api = (qs) => fetch("/api/ya?" + qs).then((r) => r.json());
 
@@ -146,7 +147,10 @@ function ArtistSearch() {
     catch (x) { setErr("Чарт не сработал."); setBusy(false); }
   };
 
-  const rows = scanned.filter((a) => a.listeners >= min).sort((x, y) => y.listeners - x.listeners);
+  const rows = scanned
+    .filter((a) => a.listeners >= min)
+    .filter((a) => (onlyContacts ? a.links && a.links.length > 0 : true))
+    .sort((x, y) => y.listeners - x.listeners);
 
   const exportCsv = () => {
     const head = "Артист;Слушатели;Дельта;Контакты;Ссылка";
@@ -183,6 +187,10 @@ function ArtistSearch() {
         {[50000, 100000, 300000].map((v) => (
           <button key={v} onClick={() => setMin(v)} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/60 hover:bg-white/5">{fmt(v)}+</button>
         ))}
+        <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-white/60">
+          <input type="checkbox" checked={onlyContacts} onChange={(e) => setOnlyContacts(e.target.checked)} className="h-4 w-4 accent-white" />
+          Только с контактами
+        </label>
         {scanned.length > 0 && <button onClick={exportCsv} className="ml-auto rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5">Экспорт CSV</button>}
       </div>
 
