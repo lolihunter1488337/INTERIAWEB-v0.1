@@ -3,10 +3,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ["Geist", "sans-serif"],
-        sans: ["Geist", "sans-serif"],
-        mono: ["Geist Mono", "monospace"],
-        serif: ["Instrument Serif", "serif"],
+        display: ["Space Grotesk", "sans-serif"],
+        sans: ["Space Grotesk", "sans-serif"],
+        mono: ["Space Grotesk", "sans-serif"],
+        serif: ["Space Grotesk", "sans-serif"],
       },
       colors: {
         ink: "#fafafa",

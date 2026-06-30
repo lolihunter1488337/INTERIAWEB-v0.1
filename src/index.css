@@ -5,12 +5,12 @@
 :root{ color-scheme: dark; }
 *{ box-sizing: border-box; }
 html{ scroll-behavior: smooth; }
-body{ margin:0; background:#09090b; color:#fafafa; font-family:"Geist",sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; letter-spacing:-0.01em; }
+body{ margin:0; background:#09090b; color:#fafafa; font-family:"Space Grotesk",sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; letter-spacing:-0.01em; }
 ::selection{ background:#fafafa; color:#09090b; }
 ::-webkit-scrollbar{ width:9px; } ::-webkit-scrollbar-track{ background:#09090b; } ::-webkit-scrollbar-thumb{ background:#27272a; border-radius:9px; } ::-webkit-scrollbar-thumb:hover{ background:#52525b; }
 
-.serif{ font-family:"Instrument Serif",serif; font-style:italic; letter-spacing:0; }
-.label{ font-family:"Geist Mono",monospace; text-transform:uppercase; letter-spacing:.18em; font-size:11px; }
+.serif{ font-family:"Space Grotesk",sans-serif; font-style:italic; letter-spacing:0; }
+.label{ font-family:"Space Grotesk",sans-serif; text-transform:uppercase; letter-spacing:.18em; font-size:11px; }
 
 .chrome{
   background:linear-gradient(180deg,#fff 0%,#e6e6e9 20%,#a1a1aa 50%,#71717a 54%,#d4d4d8 80%,#fff 100%);

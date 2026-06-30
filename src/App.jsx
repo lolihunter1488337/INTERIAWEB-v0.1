@@ -25,17 +25,16 @@ const REST = ALL_ARTISTS.filter((a) => !POPULAR.includes(a));
 const GENRES = ["Бразил-фанк", "Фонк", "Электроника", "Эксперимент"];
 
 const OFFERS = [
-  { n: "01", title: "90 / 10", text: "Ты забираешь 90%. Прозрачно, выше рынка." },
-  { n: "02", title: "Обложка в подарок", text: "Уникальный кавер-арт на каждый релиз." },
-  { n: "03", title: "Питчинг", text: "Заносим на все крупные площадки." },
-  { n: "04", title: "Продвижение", text: "TikTok, соцсети и реклама под релиз." },
+  { n: "01", title: "90% роялти", text: "Артист получает до 90% дохода от цифровых продаж и стриминга в соответствии с условиями договора." },
+  { n: "02", title: "Разработка обложки", text: "Разработка индивидуального дизайна обложки для каждого релиза осуществляется лейблом и предоставляется артисту без дополнительной оплаты." },
+  { n: "03", title: "Питчинг релизов", text: "Подача релизов в редакционные команды ведущих стриминговых платформ для попадания треков в редакторские плейлисты." },
 ];
 
 const PROCESS = [
-  { n: "01", t: "Демо", d: "Скидываешь готовый трек." },
-  { n: "02", t: "Условия", d: "Согласуем детали." },
-  { n: "03", t: "Договор", d: "Подписываем официально." },
-  { n: "04", t: "Выплаты", d: "Релиз, питчинг — деньги тебе." },
+  { n: "01", t: "Рассмотрение демозаписи", d: "Направьте готовый трек на рассмотрение команде лейбла." },
+  { n: "02", t: "Согласование условий", d: "Обсуждаем формат сотрудничества, условия выпуска и другие детали." },
+  { n: "03", t: "Заключение договора", d: "Юридически закрепляем права и обязанности сторон путём подписания договора." },
+  { n: "04", t: "Выпуск и выплаты", d: "Организуем выпуск и продвижение релиза, после чего артист получает выплаты в соответствии с условиями договора." },
 ];
 
 const FAQ = [
@@ -106,7 +105,7 @@ function Nav() {
 function Hero() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, -120]);
   const op = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
   return (
@@ -125,13 +124,6 @@ function Hero() {
           <motion.h1 variants={fadeUp} className="text-[clamp(56px,13vw,150px)] font-bold leading-[.85] tracking-[-0.04em]">
             INTERIA<span className="chrome chrome-anim">!</span>
           </motion.h1>
-          <motion.p variants={fadeUp} className="serif mt-3 text-[clamp(20px,3.4vw,40px)] leading-tight text-muted">
-            будущее тёмной электроники
-          </motion.p>
-
-          <motion.div variants={fadeUp} className="label mt-7 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-muted">
-            {GENRES.map((g, i) => (<span key={i} className="flex items-center gap-3">{i > 0 && <Cross />}<span className="text-ink/80">{g}</span></span>))}
-          </motion.div>
 
           <motion.div variants={fadeUp} className="mt-10 flex flex-wrap justify-center gap-3">
             <MagneticButton href="#demo" className="btn-fill rounded-full px-7 py-3.5 text-[15px] font-semibold">Прислать демо →</MagneticButton>
@@ -140,11 +132,13 @@ function Hero() {
         </motion.div>
       </motion.div>
 
-      <motion.div style={{ opacity: op }} className="relative z-10 mx-auto mt-16 grid w-full max-w-3xl grid-cols-4 gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06]">
+      <motion.div style={{ opacity: op }} className="relative z-10 mx-auto mt-12 grid w-full max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:mt-16 sm:grid-cols-4">
         {[["90", "% артисту"], ["10", "% лейблу"], ["33", "релиза"], ["50", "+ артистов"]].map(([n, l], i) => (
-          <div key={i} className="bg-bg px-3 py-5 text-center">
-            <div className="text-2xl font-bold tracking-tight md:text-4xl"><Counter to={parseInt(n)} /></div>
-            <div className="label label-dim mt-1.5">{l}</div>
+          <div key={i} className="grid min-h-[104px] place-items-center bg-bg px-3 py-5 text-center">
+            <div>
+              <div className="text-3xl font-bold tracking-tight md:text-4xl"><Counter to={parseInt(n)} /></div>
+              <div className="label label-dim mt-1.5 leading-relaxed">{l}</div>
+            </div>
           </div>
         ))}
       </motion.div>
@@ -192,7 +186,7 @@ function Manifesto() {
     <section id="about" className="relative mx-auto max-w-5xl px-5 py-28 md:px-8 md:py-40">
       <Reveal><Tag n="01">Манифест</Tag></Reveal>
       <ScrollText className="mt-8 text-[clamp(26px,4.6vw,60px)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink"
-        text="Мы не штампуем релизы. Мы строим артистов, звук и культуру, которые остаются." />
+        text="Мы создаём будущее музыки. Остальное — история." />
       <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:grid-cols-3">
         {VALUES.map((v, i) => (
           <div key={i} className="bg-bg p-7">
@@ -224,10 +218,10 @@ function ReleasesSection() {
 
 function Offer() {
   return (
-    <Section id="offer" n="03" tag="Условия" title="Что ты получаешь"
-      lead="Официально, по договору. Без подвохов и мелкого шрифта.">
+    <Section id="offer" n="03" tag="Условия" title="Что получает артист"
+      lead="Все условия сотрудничества закрепляются договором и обеспечивают прозрачную и понятную модель работы.">
       <motion.div variants={container(0.1)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {OFFERS.map((o) => (
           <motion.div key={o.n} variants={fadeUp}>
             <SpotlightCard className="h-full p-6">
@@ -244,7 +238,8 @@ function Offer() {
 
 function Process() {
   return (
-    <Section id="process" n="04" tag="Как мы работаем" title="От демо до выплаты">
+    <Section id="process" n="04" tag="Как мы работаем" title="От демозаписи до выпуска релиза"
+      lead="Прозрачный процесс сотрудничества на каждом этапе — от рассмотрения материала до получения роялти.">
       <motion.div variants={container(0.12)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }}
         className="grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] md:grid-cols-4">
         {PROCESS.map((p, i) => (
@@ -327,9 +322,9 @@ function Demo() {
         <Reveal>
           <Tag n="07">Демо</Tag>
           <h2 className="mt-5 text-[clamp(40px,7vw,84px)] font-bold leading-[.9] tracking-[-0.04em]">
-            Готов <span className="serif font-normal text-muted">выпускаться?</span>
+            Готовы выпустить свой <span className="serif font-normal text-muted">релиз?</span>
           </h2>
-          <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">Покажи свой звук — послушаем и вернёмся с ответом. Новая глава, новая энергия, тот же андеграунд.</p>
+          <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">Направьте демозапись на рассмотрение нашей команде. Мы внимательно изучим материал и свяжемся с вами.</p>
           <div className="label mt-8 space-y-1.5 text-muted">
             <div className="text-ink">Контакт</div>
             <div>info@interialabel.com</div>
@@ -341,11 +336,11 @@ function Demo() {
           <motion.form onSubmit={submit} className="flex flex-col gap-7">
             <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
             <div className="grid gap-7 sm:grid-cols-2">
-              <Field name="name" label="Имя / ник" placeholder="INTERIA!" />
-              <Field name="contact" label="Контакт" placeholder="@telegram" />
+              <Field name="name" label="Имя / псевдоним" placeholder="Укажите имя исполнителя или творческий псевдоним." />
+              <Field name="contact" label="Контакт для связи" placeholder="@telegram или email" />
             </div>
-            <Field name="link" label="Ссылка на трек" placeholder="SoundCloud, Я.Диск, Drive..." />
-            <Field name="about" label="О себе" placeholder="Жанр, вайб, площадки..." area />
+            <Field name="link" label="Ссылка на релиз" placeholder="SoundCloud, Google Drive, Dropbox, Яндекс Диск или другой сервис с открытым доступом." />
+            <Field name="about" label="Дополнительная информация" placeholder="Кратко расскажите о себе, музыкальном стиле, опыте и целях сотрудничества." area />
             <motion.button type="submit" disabled={status === "sending"} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
               className="btn-fill mt-2 flex items-center justify-center overflow-hidden rounded-full px-8 py-4 text-[15px] font-semibold disabled:opacity-70">
               <AnimatePresence mode="wait" initial={false}>
