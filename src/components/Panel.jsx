@@ -19,11 +19,36 @@ const TASK_COLS = [
   { key: "status", label: "Статус", type: "select", options: ["Новая", "В работе", "Готово"] },
 ];
 
-function useStored(key, initial) {
-  const [val, setVal] = useState(() => {
-    try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : initial; } catch { return initial; }
-  });
-  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }, [key, val]);
+// общий склад данных (Vercel KV через /api/panel) с фолбэком на localStorage
+function useShared(apiKey, initial) {
+  const [val, setVal] = useState(initial);
+  const [loaded, setLoaded] = useState(false);
+  const lk = "interia_panel_" + apiKey;
+  useEffect(() => {
+    let alive = true;
+    const readLocal = () => { try { return JSON.parse(localStorage.getItem(lk) || "[]"); } catch { return []; } };
+    fetch("/api/panel?key=" + apiKey)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!alive) return;
+        const local = readLocal();
+        if (j && j.ok) {
+          if ((!j.data || j.data.length === 0) && local.length > 0) setVal(local); // миграция локального в общий
+          else setVal(j.data || []);
+        } else if (local.length) setVal(local);
+        setLoaded(true);
+      })
+      .catch(() => { const local = readLocal(); if (local.length) setVal(local); setLoaded(true); });
+    return () => { alive = false; };
+  }, [apiKey]);
+  useEffect(() => {
+    if (!loaded) return;
+    try { localStorage.setItem(lk, JSON.stringify(val)); } catch (e) {}
+    const t = setTimeout(() => {
+      fetch("/api/panel?key=" + apiKey, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: val }) }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [val, loaded, apiKey]);
   return [val, setVal];
 }
 
@@ -243,8 +268,8 @@ export default function Panel() {
     return () => { document.body.style.cursor = prevBody; document.documentElement.style.cursor = prevHtml; };
   }, []);
   const [tab, setTab] = useState("releases");
-  const [releases, setReleases] = useStored("interia_panel_releases", []);
-  const [tasks, setTasks] = useStored("interia_panel_tasks", []);
+  const [releases, setReleases] = useShared("releases", []);
+  const [tasks, setTasks] = useShared("tasks", []);
 
   if (!ok) {
     return (
@@ -273,7 +298,7 @@ export default function Panel() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <div className="text-xl font-bold">INTERIA! · панель</div>
-            <div className="text-xs text-white/40">Внутренний трекер · данные пока хранятся в этом браузере (v0)</div>
+            <div className="text-xs text-white/40">Внутренний командный трекер · общий для всех</div>
           </div>
           <a href="#top" className="whitespace-nowrap text-xs text-white/40 hover:text-white">← на сайт</a>
         </div>
