@@ -26,15 +26,17 @@ function useShared(apiKey, initial) {
   const lk = "interia_panel_" + apiKey;
   useEffect(() => {
     let alive = true;
-    const readLocal = () => { try { return JSON.parse(localStorage.getItem(lk) || "[]"); } catch { return []; } };
+    const arr = (x) => (Array.isArray(x) ? x : []);
+    const readLocal = () => { try { return arr(JSON.parse(localStorage.getItem(lk) || "[]")); } catch { return []; } };
     fetch("/api/panel?key=" + apiKey)
       .then((r) => r.json())
       .then((j) => {
         if (!alive) return;
         const local = readLocal();
+        const remote = arr(j && j.data);
         if (j && j.ok) {
-          if ((!j.data || j.data.length === 0) && local.length > 0) setVal(local); // миграция локального в общий
-          else setVal(j.data || []);
+          if (remote.length === 0 && local.length > 0) setVal(local); // миграция локального в общий
+          else setVal(remote);
         } else if (local.length) setVal(local);
         setLoaded(true);
       })
@@ -55,12 +57,13 @@ function useShared(apiKey, initial) {
 function emptyRow(cols) { const o = {}; cols.forEach((c) => (o[c.key] = "")); return o; }
 
 function Tracker({ cols, rows, setRows }) {
-  const update = (i, key, value) => setRows(rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
-  const add = () => setRows([...rows, emptyRow(cols)]);
-  const del = (i) => setRows(rows.filter((_, idx) => idx !== i));
+  const list = Array.isArray(rows) ? rows : [];
+  const update = (i, key, value) => setRows(list.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  const add = () => setRows([...list, emptyRow(cols)]);
+  const del = (i) => setRows(list.filter((_, idx) => idx !== i));
   const exportCsv = () => {
     const head = cols.map((c) => c.label).join(";");
-    const body = rows.map((r) => cols.map((c) => (r[c.key] || "").toString().replace(/;/g, ",")).join(";")).join("\n");
+    const body = list.map((r) => cols.map((c) => (r[c.key] || "").toString().replace(/;/g, ",")).join(";")).join("\n");
     const blob = new Blob(["﻿" + head + "\n" + body], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -72,7 +75,7 @@ function Tracker({ cols, rows, setRows }) {
       <div className="mb-3 flex items-center gap-2">
         <button onClick={add} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">+ Строка</button>
         <button onClick={exportCsv} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5">Экспорт CSV</button>
-        <span className="ml-auto text-xs text-white/30">{rows.length} шт.</span>
+        <span className="ml-auto text-xs text-white/30">{list.length} шт.</span>
       </div>
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="w-full border-collapse text-sm">
@@ -85,10 +88,10 @@ function Tracker({ cols, rows, setRows }) {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && (
+            {list.length === 0 && (
               <tr><td colSpan={cols.length + 1} className="px-3 py-6 text-center text-white/30">Пусто. Нажми «+ Строка».</td></tr>
             )}
-            {rows.map((r, i) => (
+            {list.map((r, i) => (
               <tr key={i} className="hover:bg-white/[.02]">
                 {cols.map((c) => (
                   <td key={c.key} className="border-b border-white/[.06] px-1.5 py-1">

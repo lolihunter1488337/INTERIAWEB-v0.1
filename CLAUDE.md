@@ -58,6 +58,12 @@
 - Хранилище v0 = localStorage (на устройстве). СЛЕДУЮЩИЙ ШАГ: общий бэкенд (Vercel KV/Upstash),
   чтобы вся команда видела одни и те же данные + серверная проверка пароля.
 
+## Общие трекеры панели (Релизы/Задачи)
+- Бэкенд: `api/panel.js` — Vercel KV (Upstash Redis REST). Env: KV_REST_API_URL + KV_REST_API_TOKEN (Vercel добавляет при подключении KV-хранилища). Ключи: interia:releases, interia:tasks.
+- Фронт: хук `useShared` в Panel.jsx — грузит с /api/panel при входе, сохраняет (debounce 600мс), фолбэк на localStorage + одноразовая миграция локальных данных в общий склад.
+- ⚠️ Чтобы стали ОБЩИМИ — нужно подключить KV-хранилище в Vercel (Storage → Create → KV/Redis → Connect project). Без него трекеры работают локально (не ломаются).
+- Поиск артистов фильтр по умолчанию: только с контактами (галка «Только с контактами»).
+
 ## A&R-автопоиск артистов (инструмент)
 - Бэкенд: `api/ya.js` — серверный прокси к Яндекс.Музыке. Токен ТОЛЬКО в env `YANDEX_MUSIC_TOKEN` (Vercel), НЕ в коде/гите.
 - Действия: searchPlaylists(q) · playlistArtists(owner,kind) · chartArtists · artists(ids) → brief-info даёт `lastMonthListeners` + `lastMonthListenersDelta` + `links` (соцсети, иногда Telegram/VK).
