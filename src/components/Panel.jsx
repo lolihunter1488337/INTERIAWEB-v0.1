@@ -225,6 +225,15 @@ function ArtistSearch() {
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
+
+  // на странице панели кастомного курсора нет — форсим обычный системный
+  useEffect(() => {
+    const prevBody = document.body.style.cursor;
+    const prevHtml = document.documentElement.style.cursor;
+    document.body.style.cursor = "auto";
+    document.documentElement.style.cursor = "auto";
+    return () => { document.body.style.cursor = prevBody; document.documentElement.style.cursor = prevHtml; };
+  }, []);
   const [tab, setTab] = useState("releases");
   const [releases, setReleases] = useStored("interia_panel_releases", []);
   const [tasks, setTasks] = useStored("interia_panel_tasks", []);
