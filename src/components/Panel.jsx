@@ -89,6 +89,139 @@ function Tracker({ cols, rows, setRows }) {
   );
 }
 
+function fmt(n) { return (n || 0).toLocaleString("ru-RU"); }
+
+function ArtistSearch() {
+  const [q, setQ] = useState("");
+  const [playlists, setPlaylists] = useState([]);
+  const [picked, setPicked] = useState(null);
+  const [min, setMin] = useState(100000);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [scanned, setScanned] = useState([]);
+  const [err, setErr] = useState("");
+  const [note, setNote] = useState("");
+
+  const api = (qs) => fetch("/api/ya?" + qs).then((r) => r.json());
+
+  const searchPl = async (e) => {
+    if (e) e.preventDefault();
+    setErr(""); setNote(""); setPlaylists([]);
+    try {
+      const j = await api("action=searchPlaylists&q=" + encodeURIComponent(q));
+      if (!j.ok) throw new Error(j.error);
+      setPlaylists(j.items || []);
+      if (!(j.items || []).length) setNote("Ничего не нашлось — попробуй другой запрос.");
+    } catch (x) { setErr("Не сработало. Поиск работает только на боевом сайте (не localhost) и при настроенном токене."); }
+  };
+
+  const scan = async (artists) => {
+    setBusy(true); setScanned([]); setProgress({ done: 0, total: artists.length });
+    const ids = artists.map((a) => a.id);
+    const acc = [];
+    const B = 15;
+    for (let i = 0; i < ids.length; i += B) {
+      try {
+        const j = await api("action=artists&ids=" + ids.slice(i, i + B).join(","));
+        (j.artists || []).forEach((a) => acc.push(a));
+      } catch (x) {}
+      setProgress({ done: Math.min(i + B, ids.length), total: ids.length });
+      setScanned([...acc]);
+    }
+    setBusy(false);
+  };
+
+  const runPlaylist = async (p) => {
+    setPicked(p); setErr(""); setNote(""); setBusy(true); setScanned([]);
+    try {
+      const j = await api("action=playlistArtists&owner=" + p.owner + "&kind=" + p.kind);
+      if (!j.ok) throw new Error();
+      await scan(j.artists || []);
+    } catch (x) { setErr("Не удалось получить артистов плейлиста."); setBusy(false); }
+  };
+
+  const runChart = async () => {
+    setPicked({ title: "Чарт России" }); setErr(""); setNote(""); setBusy(true); setScanned([]);
+    try { const j = await api("action=chartArtists"); await scan(j.artists || []); }
+    catch (x) { setErr("Чарт не сработал."); setBusy(false); }
+  };
+
+  const rows = scanned.filter((a) => a.listeners >= min).sort((x, y) => y.listeners - x.listeners);
+
+  const exportCsv = () => {
+    const head = "Артист;Слушатели;Дельта;Контакты;Ссылка";
+    const body = rows.map((a) => [a.name, a.listeners, a.delta, (a.links || []).map((l) => l.type + ":" + l.href).join(" "), a.url].join(";")).join("\n");
+    const blob = new Blob(["﻿" + head + "\n" + body], { type: "text/csv;charset=utf-8" });
+    const u = document.createElement("a"); u.href = URL.createObjectURL(blob); u.download = "artists.csv"; u.click();
+  };
+
+  return (
+    <div>
+      <form onSubmit={searchPl} className="mb-3 flex flex-wrap gap-2">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Плейлист: напр. бразильский фонк"
+          className="min-w-[220px] flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/40" />
+        <button className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">Найти плейлисты</button>
+        <button type="button" onClick={runChart} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5">Чарт РФ</button>
+      </form>
+
+      {playlists.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {playlists.map((p) => (
+            <button key={p.owner + "-" + p.kind} onClick={() => runPlaylist(p)}
+              className={"rounded-lg border px-3 py-2 text-left text-xs " + (picked && picked.owner === p.owner && picked.kind === p.kind ? "border-white bg-white/10" : "border-white/15 text-white/70 hover:bg-white/5")}>
+              <div className="font-semibold text-white">{p.title}</div>
+              <div className="text-white/40">{p.tracks} треков</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <label className="text-sm text-white/60">Слушателей от:</label>
+        <input type="number" value={min} onChange={(e) => setMin(+e.target.value || 0)}
+          className="w-32 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
+        {[50000, 100000, 300000].map((v) => (
+          <button key={v} onClick={() => setMin(v)} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/60 hover:bg-white/5">{fmt(v)}+</button>
+        ))}
+        {scanned.length > 0 && <button onClick={exportCsv} className="ml-auto rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5">Экспорт CSV</button>}
+      </div>
+
+      {err && <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{err}</div>}
+      {note && <div className="mb-3 text-sm text-white/40">{note}</div>}
+      {busy && <div className="mb-3 text-sm text-white/60">Сканирую артистов: {progress.done} / {progress.total}…</div>}
+      {picked && !busy && scanned.length > 0 && <div className="mb-2 text-sm text-white/50">{picked.title}: подходит <b className="text-white">{rows.length}</b> из {scanned.length} (порог {fmt(min)}+)</div>}
+
+      {rows.length > 0 && (
+        <div className="overflow-x-auto rounded-xl border border-white/10">
+          <table className="w-full border-collapse text-sm">
+            <thead><tr>
+              {["#", "Артист", "Слушателей/мес", "Δ мес", "Контакты", "Я.Музыка"].map((h) => (
+                <th key={h} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-left text-[11px] uppercase tracking-wider text-white/50">{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {rows.map((a, i) => (
+                <tr key={a.id} className="hover:bg-white/[.02]">
+                  <td className="border-b border-white/[.06] px-3 py-2 text-white/30">{i + 1}</td>
+                  <td className="border-b border-white/[.06] px-3 py-2 font-semibold text-white">{a.name}</td>
+                  <td className="border-b border-white/[.06] px-3 py-2 text-white">{fmt(a.listeners)}</td>
+                  <td className={"border-b border-white/[.06] px-3 py-2 " + (a.delta >= 0 ? "text-green-400" : "text-red-400")}>{a.delta >= 0 ? "+" : ""}{fmt(a.delta)}</td>
+                  <td className="border-b border-white/[.06] px-3 py-2">
+                    {(a.links && a.links.length) ? a.links.map((l, k) => (
+                      <a key={k} href={l.href} target="_blank" rel="noreferrer" className="mr-2 inline-block text-white/70 underline hover:text-white">{l.type}</a>
+                    )) : <span className="text-white/25">—</span>}
+                  </td>
+                  <td className="border-b border-white/[.06] px-3 py-2"><a href={a.url} target="_blank" rel="noreferrer" className="text-white/50 underline hover:text-white">открыть</a></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
@@ -128,14 +261,15 @@ export default function Panel() {
           <a href="#top" className="whitespace-nowrap text-xs text-white/40 hover:text-white">← на сайт</a>
         </div>
 
-        <div className="mb-5 flex gap-2">
+        <div className="mb-5 flex flex-wrap gap-2">
           <button onClick={() => setTab("releases")} className={"rounded-full px-4 py-2 text-sm " + (tab === "releases" ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70")}>Релизы</button>
           <button onClick={() => setTab("tasks")} className={"rounded-full px-4 py-2 text-sm " + (tab === "tasks" ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70")}>Задачи</button>
+          <button onClick={() => setTab("search")} className={"rounded-full px-4 py-2 text-sm " + (tab === "search" ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70")}>🔎 Поиск артистов</button>
         </div>
 
-        {tab === "releases"
-          ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
-          : <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />}
+        {tab === "releases" ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
+          : tab === "tasks" ? <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />
+          : <ArtistSearch />}
       </div>
     </div>
   );

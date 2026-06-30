@@ -15,7 +15,8 @@
 
 ## Доступы / ссылки
 - Репозиторий: https://github.com/lolihunter1488337/INTERIAWEB-v0.1  (ветка main)
-- Прод: https://interiaweb-v0-1.vercel.app
+- Прод (боевой домен): https://www.interiarecords.com (домен Timeweb, хостинг Vercel; апекс 308→www; SSL от Vercel)
+- Старый адрес (тоже жив): https://interiaweb-v0-1.vercel.app
 - Деплой = просто `git push` (креды закэшированы в Windows Credential Manager) -> Vercel сам собирает
 - Telegram-бот: @interiaformbot
 - Группа заявок: "INTERIA FORM", chat_id = -1003935357575 (супергруппа)
@@ -58,6 +59,8 @@
   чтобы вся команда видела одни и те же данные + серверная проверка пароля.
 
 ## 📓 Журнал правок сайта
+- 2026-07-01: сайт поставлен на свой домен **interiarecords.com** (Timeweb DNS → Vercel: A @ → 216.198.79.1, CNAME www → vercel-dns; удалили AAAA Timeweb). SSL от Vercel поднялся.
+- 2026-07-01: новый **OG-превью** — из хром-логотипа ЛОГО3д.png сделал public/og.jpg 1200×630 (jimp cover). Мета: og:title=INTERIA!, og:description=слоган «Мы создаём будущее музыки. Остальное — история.», абсолютные og/twitter image (?v=2), добавил og:url + canonical на www.interiarecords.com. Старый красный постер выпилен. Telegram кэширует OG — обновлять через @WebpageBot.
 - 2026-06-30: добавлена приватная внутренняя панель `#/panel` (трекер релизов + задач, v0 на localStorage).
 - 2026-06-30: **шрифты** — всё перевели на Space Grotesk (index.html link, tailwind.config.js, index.css: body/.serif/.label).
 - 2026-06-30: **Hero** — убрали подзаголовок «будущее тёмной электроники» и строку жанров (GENRES). Это убрало наезд кнопок на статы.
