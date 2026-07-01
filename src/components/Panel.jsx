@@ -381,6 +381,129 @@ function Dashboard() {
   );
 }
 
+// ——— СОЦСЕТИ: Instagram (2 поста/нед: Вт ротация + Пт Release Day) ———
+const IG_RELEASE = { key: "release", icon: "🎵", title: "Release Day", desc: "Главный пост недели. Новый сингл / EP / альбом. Релиз = событие." };
+const IG_ROTATION = [
+  { key: "achv", icon: "🏆", title: "Достижение артиста", desc: "Важное: 100K/500K/1M прослушиваний, редакторский плейлист, вирусный момент, крупная коллаба." },
+  { key: "aotw", icon: "⭐", title: "Артист недели", desc: "Самый сильный релиз недели: арт/фото, краткая история, почему выбран, ссылка на трек." },
+  { key: "inside", icon: "🏢", title: "Inside INTERIA", desc: "Закулисье: подготовка релизов, работа над сайтом, дизайн, команда, разбор демо, мерч." },
+  { key: "archive", icon: "📚", title: "INTERIA Archive", desc: "История вышедшего релиза: создание, обложка, «год спустя», интересные факты." },
+  { key: "atmo", icon: "🌑", title: "Атмосфера", desc: "Фирменный вайб: ACCESS GRANTED, SIGNAL RECEIVED, хром-крест, тизеры сайта. Редко." },
+];
+const IG_ANCHOR = new Date(2026, 6, 7); // вт 7 июля 2026 = Неделя 1, ротация[0]
+
+function igPlanFor(date) {
+  const dow = date.getDay();
+  if (dow === 5) return IG_RELEASE;
+  if (dow === 2) {
+    const ms = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(IG_ANCHOR.getFullYear(), IG_ANCHOR.getMonth(), IG_ANCHOR.getDate());
+    const weeks = Math.round(ms / (7 * 86400000));
+    return IG_ROTATION[((weeks % 5) + 5) % 5];
+  }
+  return null;
+}
+
+function SocialCalendar() {
+  const today = new Date();
+  const [cur, setCur] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [sel, setSel] = useState(null);
+  const y = cur.getFullYear(), m = cur.getMonth();
+  const monthName = cur.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+  const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
+  const dim = new Date(y, m + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= dim; d++) cells.push(new Date(y, m, d));
+  const isToday = (d) => d && d.toDateString() === today.toDateString();
+  const upcoming = [];
+  for (let i = 0; i < 45 && upcoming.length < 6; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    const p = igPlanFor(d);
+    if (p) upcoming.push({ d, p });
+  }
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <button onClick={() => setCur(new Date(y, m - 1, 1))} className="rounded-md border border-white/15 px-3 py-1 text-sm text-white/70 hover:bg-white/5">←</button>
+        <div className="text-sm font-semibold capitalize text-white">{monthName}</div>
+        <button onClick={() => setCur(new Date(y, m + 1, 1))} className="rounded-md border border-white/15 px-3 py-1 text-sm text-white/70 hover:bg-white/5">→</button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] uppercase tracking-wider text-white/30">
+        {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((w) => <div key={w} className="py-1">{w}</div>)}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const p = igPlanFor(d);
+          return (
+            <button key={i} onClick={() => setSel(p ? { d, p } : null)}
+              className={"flex min-h-[54px] flex-col rounded-lg border p-1.5 text-left transition " +
+                (p ? "border-white/15 bg-white/[.05] hover:bg-white/[.09]" : "border-transparent bg-white/[.015]") +
+                (isToday(d) ? " ring-1 ring-white/60" : "")}>
+              <span className="text-[11px] text-white/40">{d.getDate()}</span>
+              {p && <span className="mt-auto truncate text-[11px] text-white/80">{p.icon} {p.title}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {sel && (
+        <div className="mt-3 rounded-lg border border-white/15 bg-white/[.04] p-3">
+          <div className="text-sm font-semibold text-white">{sel.p.icon} {sel.p.title} · {sel.d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" })}</div>
+          <div className="mt-1 text-sm text-white/60">{sel.p.desc}</div>
+        </div>
+      )}
+      <div className="mt-4">
+        <div className="mb-2 text-[11px] uppercase tracking-wider text-white/40">Ближайшие посты</div>
+        <div className="space-y-1.5">
+          {upcoming.map(({ d, p }, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[.02] px-3 py-2 text-sm">
+              <span className="w-28 shrink-0 text-white/50">{d.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" })}</span>
+              <span className="text-white">{p.icon} {p.title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Social() {
+  const [net, setNet] = useState("instagram");
+  const nets = [["instagram", "Instagram"], ["telegram", "Telegram"], ["youtube", "YouTube"], ["tiktok", "TikTok"]];
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {nets.map(([id, label]) => (
+          <button key={id} onClick={() => id === "instagram" && setNet(id)} disabled={id !== "instagram"}
+            className={"rounded-lg border px-3 py-2 text-sm " + (net === id ? "border-white bg-white/10 text-white" : id === "instagram" ? "border-white/15 text-white/70 hover:bg-white/5" : "cursor-not-allowed border-white/10 text-white/25")}>
+            {label}{id !== "instagram" && " · скоро"}
+          </button>
+        ))}
+      </div>
+      {net === "instagram" && (
+        <div>
+          <div className="mb-3 rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-white/60">
+            <b className="text-white">Instagram · 2 поста/нед</b> — <b className="text-white">Вторник</b> (ротация рубрик) + <b className="text-white">Пятница</b> (Release Day). Ротация строится автоматически — план бесконечный.
+          </div>
+          <SocialCalendar />
+          <div className="mt-4">
+            <div className="mb-2 text-[11px] uppercase tracking-wider text-white/40">Рубрики</div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[IG_RELEASE, ...IG_ROTATION].map((r) => (
+                <div key={r.key} className="rounded-lg border border-white/10 bg-white/[.02] p-2.5">
+                  <div className="text-sm font-semibold text-white">{r.icon} {r.title}</div>
+                  <div className="mt-0.5 text-xs text-white/50">{r.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-white/25">Дальше: кнопка «сгенерить и запостить» для Inst/TG, задачи-исполнителям для TikTok/YouTube. Полная стратегия — в ПЛАН ЛЕЙБЛА/СОЦСЕТИ-INSTAGRAM.md.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
@@ -427,7 +550,7 @@ export default function Panel() {
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["search", "🔎 Поиск артистов"]].map(([id, label]) => (
+          {[["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
           ))}
         </div>
@@ -436,6 +559,7 @@ export default function Panel() {
           : tab === "releases" ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
           : tab === "tasks" ? <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />
           : tab === "tasks_ar" ? <Tracker cols={TASK_AR_COLS} rows={tasksAr} setRows={setTasksAr} />
+          : tab === "social" ? <Social />
           : <ArtistSearch />}
       </div>
     </div>
