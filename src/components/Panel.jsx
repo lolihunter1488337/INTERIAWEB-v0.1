@@ -30,6 +30,13 @@ const TASK_COLS = [
   { key: "due", label: "Срок", type: "select", options: DUE_OPTS },
   { key: "status", label: "Статус", type: "select", options: ["Новая", "В работе", "Готово"] },
 ];
+const TASK_AR_COLS = [
+  { key: "priority", label: "•", type: "priority", narrow: true },
+  { key: "task", label: "Задача", type: "textarea" },
+  { key: "owner", label: "A&R (исполнитель)" },
+  { key: "due", label: "Срок", type: "select", options: DUE_OPTS },
+  { key: "status", label: "Статус", type: "select", options: ["Новая", "В работе", "Готово"] },
+];
 
 // общий склад данных (Vercel KV через /api/panel) с фолбэком на localStorage
 function useShared(apiKey, initial) {
@@ -336,12 +343,49 @@ function ArtistSearch() {
   );
 }
 
+function DashCard({ title, tag, items }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[.03] p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="font-semibold text-white">{title}</div>
+        {tag && <span className="whitespace-nowrap text-[10px] uppercase tracking-wider text-white/40">{tag}</span>}
+      </div>
+      <ul className="space-y-1.5 text-sm text-white/60">
+        {items.map((t, i) => <li key={i}>{t}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+function Dashboard() {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-white/10 bg-white/[.03] p-4">
+        <div className="text-[11px] uppercase tracking-wider text-white/40">Как мы растём</div>
+        <p className="mt-2 text-lg font-semibold text-white">Больше артистов → больше релизов → качественный питчинг → больше стримов.</p>
+        <p className="mt-2 text-sm text-white/50">Бюджетов и маркетинга нет. Тянет команда за счёт инструментов и соцсетей. Сплит 90/10, при росте → 80/20. Без выдуманных бюджетов и платного промо.</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <DashCard title="1 · Трафик артистов" tag="в работе" items={["Автопоиск через Яндекс.Музыку ✅", "Заготовки аутрича ✅", "Контакты из ВК — потом"]} />
+        <DashCard title="2 · Инструменты" tag="в работе" items={["Панель + общие трекеры ✅", "A&R-поиск ✅", "Дашборд-вкладка ✅", "Отгрузка/связь с Believe — обсуждаем"]} />
+        <DashCard title="3 · Соцсети" tag="в плане" items={["Instagram: профиль + план ✅", "Telegram + YouTube — дальше"]} />
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <DashCard title="Что НЕ делаем" items={["Выдуманные бюджеты и платное промо", "Фокус на 2–3 артистах вместо потока", "Сплит 70/30", "Форму с ПД до ИП + РКН"]} />
+        <DashCard title="Сейчас в работе" items={["Разделили задачи: команда / A&R", "Связать релиз-трекер с Believe (обсуждаем)", "Соцсети: запуск Instagram", "Авторизация + безопасность — в планах"]} />
+      </div>
+      <div className="text-xs text-white/30">Полная версия — в файле ПЛАН ЛЕЙБЛА/ДЭШБОРД.html</div>
+    </div>
+  );
+}
+
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
-  const [tab, setTab] = useState("releases");
+  const [tab, setTab] = useState("dashboard");
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
+  const [tasksAr, setTasksAr] = useShared("tasks_ar", []);
 
   if (!ok) {
     return (
@@ -376,13 +420,15 @@ export default function Panel() {
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          <button onClick={() => setTab("releases")} className={"rounded-full px-4 py-2 text-sm " + (tab === "releases" ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70")}>Релизы</button>
-          <button onClick={() => setTab("tasks")} className={"rounded-full px-4 py-2 text-sm " + (tab === "tasks" ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70")}>Задачи</button>
-          <button onClick={() => setTab("search")} className={"rounded-full px-4 py-2 text-sm " + (tab === "search" ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70")}>🔎 Поиск артистов</button>
+          {[["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["search", "🔎 Поиск артистов"]].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
+          ))}
         </div>
 
-        {tab === "releases" ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
+        {tab === "dashboard" ? <Dashboard />
+          : tab === "releases" ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
           : tab === "tasks" ? <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />
+          : tab === "tasks_ar" ? <Tracker cols={TASK_AR_COLS} rows={tasksAr} setRows={setTasksAr} />
           : <ArtistSearch />}
       </div>
     </div>

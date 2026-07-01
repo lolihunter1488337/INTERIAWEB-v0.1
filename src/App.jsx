@@ -80,7 +80,7 @@ function Logo3D() {
 }
 
 function Nav() {
-  const links = [["Релизы", "#releases"], ["Условия", "#offer"], ["Артисты", "#roster"], ["Мерч", "#/merch"], ["Коллабы", "#/collabs"], ["FAQ", "#faq"]];
+  const links = [["Релизы", "#releases"], ["Условия", "#offer"], ["Артисты", "#roster"], ["Мерч", "#/merch"], ["Коллабы", "#/collabs"], ["Мои релизы", "#/myreleases"], ["FAQ", "#faq"]];
   const [open, setOpen] = useState(false);
   return (
     <motion.header initial={{ y: -90, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -91,9 +91,10 @@ function Nav() {
           <Logo className="h-7 w-7 object-contain" />
           <span className="text-[15px] font-semibold tracking-tight">INTERIA!</span>
         </a>
-        <nav className="hidden gap-9 text-[13px] text-muted md:flex">
+        <nav className="hidden gap-7 text-[13px] text-muted md:flex">
           {links.map(([l, h]) => (
-            <a key={h} href={h} className="transition-colors hover:text-ink">{l}</a>
+            <a key={h} href={h}
+              className="relative whitespace-nowrap transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-ink/70 after:transition-all after:duration-300 hover:after:w-full">{l}</a>
           ))}
         </nav>
         <div className="flex items-center gap-3">
@@ -492,6 +493,7 @@ export default function App() {
         <Nav />
         {route === "#/merch" ? <ComingSoon variant="merch" />
           : route === "#/collabs" ? <ComingSoon variant="collabs" />
+          : route === "#/myreleases" ? <ComingSoon variant="myreleases" />
           : (<>
               <main>
                 <Hero />

@@ -2,7 +2,7 @@
 // Env (Vercel сам добавит при подключении KV): KV_REST_API_URL + KV_REST_API_TOKEN
 const URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const TOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-const KEYS = { releases: "interia:releases", tasks: "interia:tasks" };
+const KEYS = { releases: "interia:releases", tasks: "interia:tasks", tasks_ar: "interia:tasks_ar" };
 
 async function redis(cmd) {
   const r = await fetch(URL, {
