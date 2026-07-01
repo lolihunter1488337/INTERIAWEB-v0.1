@@ -1,7 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Пароль панели. Поменять при необходимости (видим только мы).
 const PASS = "INTERIA";
+
+const PEOPLE = ["Владислав", "Сергей", "Александр", "Ашот"];
+const DUE_OPTS = ["1 day", "2 day", "3 day", "4 day", "5 day", "6 day", "7 day", "8 day", "9 day", "10 day", "Без срока"];
+const PRIORITY_COLORS = { red: "#ef4444", yellow: "#eab308", green: "#22c55e" };
+const PRIORITY_ORDER = ["", "red", "yellow", "green"];
 
 const RELEASE_COLS = [
   { key: "artist", label: "Артист" },
@@ -10,12 +15,13 @@ const RELEASE_COLS = [
   { key: "date", label: "Дата" },
   { key: "streams", label: "Стримы" },
   { key: "pitch", label: "Питч / плейлист" },
-  { key: "owner", label: "Кто ведёт" },
+  { key: "owner", label: "Кто ведёт", type: "select", options: PEOPLE },
 ];
 const TASK_COLS = [
-  { key: "task", label: "Задача" },
-  { key: "owner", label: "Ответственный" },
-  { key: "due", label: "Срок" },
+  { key: "priority", label: "•", type: "priority", narrow: true },
+  { key: "task", label: "Задача", type: "textarea" },
+  { key: "owner", label: "Ответственный", type: "select", options: PEOPLE },
+  { key: "due", label: "Срок", type: "select", options: DUE_OPTS },
   { key: "status", label: "Статус", type: "select", options: ["Новая", "В работе", "Готово"] },
 ];
 
@@ -56,20 +62,50 @@ function useShared(apiKey, initial) {
 
 function emptyRow(cols) { const o = {}; cols.forEach((c) => (o[c.key] = "")); return o; }
 
+function AutoTextarea({ value, onChange, placeholder, className }) {
+  const ref = useRef(null);
+  useEffect(() => { const el = ref.current; if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 260) + "px"; } }, [value]);
+  return <textarea ref={ref} rows={1} value={value} onChange={onChange} placeholder={placeholder} className={className} />;
+}
+
 function Tracker({ cols, rows, setRows }) {
   const list = Array.isArray(rows) ? rows : [];
   const update = (i, key, value) => setRows(list.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
   const add = () => setRows([...list, emptyRow(cols)]);
   const del = (i) => setRows(list.filter((_, idx) => idx !== i));
+  const cyclePriority = (i, cur) => update(i, "priority", PRIORITY_ORDER[(PRIORITY_ORDER.indexOf(cur || "") + 1) % PRIORITY_ORDER.length]);
   const exportCsv = () => {
     const head = cols.map((c) => c.label).join(";");
-    const body = list.map((r) => cols.map((c) => (r[c.key] || "").toString().replace(/;/g, ",")).join(";")).join("\n");
+    const body = list.map((r) => cols.map((c) => (r[c.key] || "").toString().replace(/;/g, ",").replace(/\n/g, " ")).join(";")).join("\n");
     const blob = new Blob(["﻿" + head + "\n" + body], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "interia.csv";
-    a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "interia.csv"; a.click();
   };
+
+  const cellBase = "w-full rounded-md border border-white/10 bg-white/[.04] px-2.5 py-2 text-white outline-none transition placeholder:text-white/30 focus:border-white/40 focus:bg-white/[.08]";
+
+  const renderCell = (c, r, i) => {
+    if (c.type === "priority") {
+      const col = PRIORITY_COLORS[r.priority];
+      return (
+        <button onClick={() => cyclePriority(i, r.priority)} title="Приоритет: клик меняет цвет (красный→жёлтый→зелёный)" className="mx-auto grid h-7 w-7 place-items-center rounded-full hover:bg-white/5">
+          <span className="h-3.5 w-3.5 rounded-full" style={{ background: col || "transparent", boxShadow: col ? "0 0 7px " + col : "none", border: col ? "none" : "1px solid rgba(255,255,255,.3)" }} />
+        </button>
+      );
+    }
+    if (c.type === "select") {
+      return (
+        <select value={r[c.key] || ""} onChange={(e) => update(i, c.key, e.target.value)} className={cellBase + " min-w-[130px]"}>
+          <option value="" className="bg-zinc-900">— {c.label} —</option>
+          {c.options.map((o) => (<option key={o} value={o} className="bg-zinc-900">{o}</option>))}
+        </select>
+      );
+    }
+    if (c.type === "textarea") {
+      return <AutoTextarea value={r[c.key] || ""} onChange={(e) => update(i, c.key, e.target.value)} placeholder={c.label} className={cellBase + " min-w-[280px] resize-none leading-snug"} />;
+    }
+    return <input value={r[c.key] || ""} onChange={(e) => update(i, c.key, e.target.value)} placeholder={c.label} className={cellBase + " min-w-[120px]"} />;
+  };
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -77,35 +113,26 @@ function Tracker({ cols, rows, setRows }) {
         <button onClick={exportCsv} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5">Экспорт CSV</button>
         <span className="ml-auto text-xs text-white/30">{list.length} шт.</span>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
+              <th className="w-10 border-b border-white/10 bg-white/[.03] px-2 py-2 text-center text-[11px] uppercase tracking-wider text-white/50">#</th>
               {cols.map((c) => (
-                <th key={c.key} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-left text-[11px] uppercase tracking-wider text-white/50">{c.label}</th>
+                <th key={c.key} className={"whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-[11px] uppercase tracking-wider text-white/50 " + (c.narrow ? "w-10 text-center" : "text-left")}>{c.label}</th>
               ))}
-              <th className="border-b border-white/10 bg-white/[.03] px-2 py-2"></th>
+              <th className="w-10 border-b border-white/10 bg-white/[.03] px-2 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {list.length === 0 && (
-              <tr><td colSpan={cols.length + 1} className="px-3 py-6 text-center text-white/30">Пусто. Нажми «+ Строка».</td></tr>
+              <tr><td colSpan={cols.length + 2} className="px-3 py-6 text-center text-white/30">Пусто. Нажми «+ Строка».</td></tr>
             )}
             {list.map((r, i) => (
               <tr key={i} className="border-b border-white/[.05] transition-colors odd:bg-white/[.012] hover:bg-white/[.04]">
+                <td className="px-2 py-1.5 text-center text-xs text-white/30">{i + 1}</td>
                 {cols.map((c) => (
-                  <td key={c.key} className="px-2 py-1.5 align-middle">
-                    {c.type === "select" ? (
-                      <select value={r[c.key]} onChange={(e) => update(i, c.key, e.target.value)}
-                        className="w-full min-w-[130px] rounded-md border border-white/10 bg-white/[.04] px-2.5 py-2 text-white outline-none transition focus:border-white/40 focus:bg-white/[.08]">
-                        <option value="" className="bg-zinc-900">— {c.label} —</option>
-                        {c.options.map((o) => (<option key={o} value={o} className="bg-zinc-900">{o}</option>))}
-                      </select>
-                    ) : (
-                      <input value={r[c.key]} onChange={(e) => update(i, c.key, e.target.value)} placeholder={c.label}
-                        className="w-full min-w-[120px] rounded-md border border-white/10 bg-white/[.04] px-2.5 py-2 text-white outline-none transition placeholder:text-white/30 focus:border-white/40 focus:bg-white/[.08]" />
-                    )}
-                  </td>
+                  <td key={c.key} className={"px-2 py-1.5 align-middle " + (c.narrow ? "text-center" : "")}>{renderCell(c, r, i)}</td>
                 ))}
                 <td className="px-2 text-center align-middle">
                   <button onClick={() => del(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 transition-colors hover:bg-red-500/15 hover:text-red-400" title="Удалить">✕</button>
@@ -263,22 +290,13 @@ function ArtistSearch() {
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
-
-  // на странице панели кастомного курсора нет — форсим обычный системный
-  useEffect(() => {
-    const prevBody = document.body.style.cursor;
-    const prevHtml = document.documentElement.style.cursor;
-    document.body.style.cursor = "auto";
-    document.documentElement.style.cursor = "auto";
-    return () => { document.body.style.cursor = prevBody; document.documentElement.style.cursor = prevHtml; };
-  }, []);
   const [tab, setTab] = useState("releases");
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
 
   if (!ok) {
     return (
-      <div className="panel-scope grid min-h-screen place-items-center bg-black px-5">
+      <div className="relative z-10 grid min-h-screen place-items-center px-5">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -298,7 +316,7 @@ export default function Panel() {
   }
 
   return (
-    <div className="panel-scope min-h-screen bg-black px-4 py-6 text-white md:px-8">
+    <div className="relative z-10 min-h-screen px-4 py-6 text-white md:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>

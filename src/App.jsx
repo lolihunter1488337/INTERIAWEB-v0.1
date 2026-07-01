@@ -471,7 +471,13 @@ export default function App() {
     document.addEventListener("click", click);
     return () => { document.removeEventListener("pointerover", over); document.removeEventListener("click", click); };
   }, []);
-  if (route === "#/panel") return <Panel />;
+  if (route === "#/panel") return (
+    <PlayerProvider>
+      <LiquidBackground />
+      <Cursor />
+      <Panel />
+    </PlayerProvider>
+  );
 
   return (
     <PlayerProvider>

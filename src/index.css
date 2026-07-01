@@ -41,11 +41,6 @@ input,textarea,select{ cursor:text !important; }
 /* на тач-устройствах кастомный курсор и его свечение не нужны */
 @media (hover:none),(pointer:coarse){ .cur,.cur-glow{ display:none !important; } }
 
-/* внутренняя панель: кастомного курсора тут нет -> возвращаем обычный системный */
-.panel-scope, .panel-scope *{ cursor:auto !important; }
-.panel-scope a, .panel-scope button, .panel-scope [role=button], .panel-scope select, .panel-scope label{ cursor:pointer !important; }
-.panel-scope input, .panel-scope textarea{ cursor:text !important; }
-
 /* --- очень лёгкий CRT-фликер + развёртка --- */
 .crt{ position:fixed; inset:0; z-index:59; pointer-events:none;
   background-image:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px);
