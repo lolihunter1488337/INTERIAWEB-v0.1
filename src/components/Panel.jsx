@@ -9,9 +9,9 @@ const PRIORITY_COLORS = { red: "#ef4444", yellow: "#eab308", green: "#22c55e" };
 const PRIORITY_ORDER = ["", "red", "yellow", "green"];
 
 const OUTREACH_TEMPLATES = [
-  { name: "Стандарт", text: "Привет, {name}! На связи INTERIA! RECORDS. Слушаем тебя — твой звук заходит. Предлагаем выпускать релизы с нами: 90% дохода тебе, бесплатная обложка на каждый релиз и питчинг в редакторские плейлисты площадок. Всё официально, по договору. Расскажем подробнее?" },
-  { name: "Коротко", text: "Привет, {name}! Это лейбл INTERIA!. Зашёл твой материал — хотим предложить сотрудничество: 90% тебе, обложки и питчинг за нами. Интересно обсудить?" },
-  { name: "Дружеский", text: "{name}, привет! Кайфанули от твоих треков. Мы — INTERIA! RECORDS. Работаем честно: 90/10 в твою пользу, делаем обложки и питчим релизы в плейлисты. Скинуть условия?" },
+  { name: "Персональный", text: "{name}, привет! Это INTERIA! RECORDS. Залипли на твоей странице — {listeners} слушателей в месяц, звук реально живой. Пишем не по рассылке, а точечно.\n\nЧто мы делаем: снимаем с тебя всю рутину — дистрибуция, обложка, оформление, — и питчим релизы в редакторские плейлисты площадок. Это те охваты, которые самому почти не поднять. Деньги — 90% тебе, права остаются твои, никакой кабалы.\n\nПредлагаем не «подписаться навсегда», а попробовать один релиз и посмотреть на цифры. Скинуть, как это выглядит?" },
+  { name: "Растущий", text: "{name}, здарова! Следим за тобой — {listeners} слушателей и {delta} за месяц, ты на подъёме. Как раз в такой момент важно не слиться, а докрутить.\n\nМы — INTERIA! RECORDS, независимый лейбл. Берём на себя всю техчасть и питчим твои треки в плейлисты, чтобы рост не остановился. Ты просто делаешь музыку. 90% дохода тебе, без эксклюзив-ловушек.\n\nДавай возьмём один твой релиз в работу и покажем, что получится?" },
+  { name: "Коротко", text: "{name}, привет! INTERIA! RECORDS. Слушаем тебя — заходит ({listeners}/мес). Мы снимаем с артиста всю рутину: дистрибуция, обложка, питчинг в плейлисты. 90% денег тебе, без лок-ина. Возьмём один релиз на пробу — скину условия?" },
 ];
 
 const RELEASE_COLS = [
@@ -99,10 +99,12 @@ function Tracker({ cols, rows, setRows }) {
       );
     }
     if (c.type === "select") {
+      const cur = r[c.key] || "";
+      const opts = cur && !c.options.includes(cur) ? [cur, ...c.options] : c.options;
       return (
-        <select value={r[c.key] || ""} onChange={(e) => update(i, c.key, e.target.value)} className={cellBase + " min-w-[130px]"}>
+        <select value={cur} onChange={(e) => update(i, c.key, e.target.value)} className={cellBase + " min-w-[130px]"}>
           <option value="" className="bg-zinc-900">— {c.label} —</option>
-          {c.options.map((o) => (<option key={o} value={o} className="bg-zinc-900">{o}</option>))}
+          {opts.map((o) => (<option key={o} value={o} className="bg-zinc-900">{o}</option>))}
         </select>
       );
     }
@@ -171,7 +173,11 @@ function ArtistSearch() {
   const api = (qs) => fetch("/api/ya?" + qs).then((r) => r.json());
 
   const copyMsg = async (a) => {
-    const msg = tplText.replace(/\{name\}/g, a.name);
+    const deltaStr = (a.delta >= 0 ? "+" : "−") + fmt(Math.abs(a.delta || 0));
+    const msg = tplText
+      .replace(/\{name\}/g, a.name)
+      .replace(/\{listeners\}/g, fmt(a.listeners))
+      .replace(/\{delta\}/g, "рост " + deltaStr);
     try { await navigator.clipboard.writeText(msg); }
     catch (e) {
       const ta = document.createElement("textarea"); ta.value = msg; document.body.appendChild(ta); ta.select();
