@@ -2,7 +2,7 @@
 // Env (Vercel сам добавит при подключении KV): KV_REST_API_URL + KV_REST_API_TOKEN
 const URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const TOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-const KEYS = { releases: "interia:releases", tasks: "interia:tasks", tasks_ar: "interia:tasks_ar" };
+const KEYS = { releases: "interia:releases", tasks: "interia:tasks", tasks_ar: "interia:tasks_ar", social_ig_done: "interia:social_ig_done" };
 const PANEL_PASSWORD = process.env.PANEL_PASSWORD; // если задан — API требует заголовок x-panel-key
 
 async function redis(cmd) {

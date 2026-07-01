@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Bible from "./Bible.jsx";
 
 // Пароль больше НЕ в коде: проверяется на сервере (env PANEL_PASSWORD).
 // В сессии храним введённый пароль и шлём его в заголовке x-panel-key.
@@ -407,6 +408,10 @@ function SocialCalendar() {
   const today = new Date();
   const [cur, setCur] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [sel, setSel] = useState(null);
+  const [done, setDone] = useShared("social_ig_done", []);
+  const dkey = (d) => d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  const isDone = (d) => done.includes(dkey(d));
+  const toggleDone = (d) => { const k = dkey(d); setDone(done.includes(k) ? done.filter((x) => x !== k) : [...done, k]); };
   const y = cur.getFullYear(), m = cur.getMonth();
   const monthName = cur.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
   const startDow = (new Date(y, m, 1).getDay() + 6) % 7;
@@ -435,13 +440,15 @@ function SocialCalendar() {
         {cells.map((d, i) => {
           if (!d) return <div key={i} />;
           const p = igPlanFor(d);
+          const doneD = p && isDone(d);
           return (
             <button key={i} onClick={() => setSel(p ? { d, p } : null)}
               className={"flex min-h-[54px] flex-col rounded-lg border p-1.5 text-left transition " +
                 (p ? "border-white/15 bg-white/[.05] hover:bg-white/[.09]" : "border-transparent bg-white/[.015]") +
-                (isToday(d) ? " ring-1 ring-white/60" : "")}>
+                (isToday(d) ? " ring-1 ring-white/60" : "") +
+                (doneD ? " opacity-40 blur-[0.4px]" : "")}>
               <span className="text-[11px] text-white/40">{d.getDate()}</span>
-              {p && <span className="mt-auto truncate text-[11px] text-white/80">{p.icon} {p.title}</span>}
+              {p && <span className="mt-auto truncate text-[11px] text-white/80">{doneD ? "✓ " : ""}{p.icon} {p.title}</span>}
             </button>
           );
         })}
@@ -450,16 +457,21 @@ function SocialCalendar() {
         <div className="mt-3 rounded-lg border border-white/15 bg-white/[.04] p-3">
           <div className="text-sm font-semibold text-white">{sel.p.icon} {sel.p.title} · {sel.d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" })}</div>
           <div className="mt-1 text-sm text-white/60">{sel.p.desc}</div>
+          <button onClick={() => toggleDone(sel.d)}
+            className={"mt-3 rounded-md border px-3 py-1.5 text-sm transition " + (isDone(sel.d) ? "border-green-500/40 text-green-400" : "border-white/15 text-white/80 hover:bg-white/5")}>
+            {isDone(sel.d) ? "✓ Выполнено — снять" : "Отметить выполненным"}
+          </button>
         </div>
       )}
       <div className="mt-4">
         <div className="mb-2 text-[11px] uppercase tracking-wider text-white/40">Ближайшие посты</div>
         <div className="space-y-1.5">
           {upcoming.map(({ d, p }, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[.02] px-3 py-2 text-sm">
+            <label key={i} className="flex cursor-pointer items-center gap-3 rounded-lg border border-white/10 bg-white/[.02] px-3 py-2 text-sm">
+              <input type="checkbox" checked={isDone(d)} onChange={() => toggleDone(d)} className="h-4 w-4 accent-white" />
               <span className="w-28 shrink-0 text-white/50">{d.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" })}</span>
-              <span className="text-white">{p.icon} {p.title}</span>
-            </div>
+              <span className={"text-white " + (isDone(d) ? "line-through opacity-40" : "")}>{p.icon} {p.title}</span>
+            </label>
           ))}
         </div>
       </div>
@@ -550,7 +562,7 @@ export default function Panel() {
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"]].map(([id, label]) => (
+          {[["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📖 Библия"]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
           ))}
         </div>
@@ -560,6 +572,7 @@ export default function Panel() {
           : tab === "tasks" ? <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />
           : tab === "tasks_ar" ? <Tracker cols={TASK_AR_COLS} rows={tasksAr} setRows={setTasksAr} />
           : tab === "social" ? <Social />
+          : tab === "bible" ? <Bible />
           : <ArtistSearch />}
       </div>
     </div>
