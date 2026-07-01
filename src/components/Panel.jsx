@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 
-// Пароль панели. Поменять при необходимости (видим только мы).
-const PASS = "INTERIA";
+// Пароль больше НЕ в коде: проверяется на сервере (env PANEL_PASSWORD).
+// В сессии храним введённый пароль и шлём его в заголовке x-panel-key.
+const PKEY = "interia_panel_key";
+const authHeaders = () => ({ "x-panel-key": sessionStorage.getItem(PKEY) || "" });
 
 const PEOPLE = ["Владислав", "Сергей", "Александр", "Ашот"];
 const DUE_OPTS = ["1 day", "2 day", "3 day", "4 day", "5 day", "6 day", "7 day", "8 day", "9 day", "10 day", "Без срока"];
@@ -47,7 +49,7 @@ function useShared(apiKey, initial) {
     let alive = true;
     const arr = (x) => (Array.isArray(x) ? x : []);
     const readLocal = () => { try { return arr(JSON.parse(localStorage.getItem(lk) || "[]")); } catch { return []; } };
-    fetch("/api/panel?key=" + apiKey)
+    fetch("/api/panel?key=" + apiKey, { headers: authHeaders() })
       .then((r) => r.json())
       .then((j) => {
         if (!alive) return;
@@ -66,7 +68,7 @@ function useShared(apiKey, initial) {
     if (!loaded) return;
     try { localStorage.setItem(lk, JSON.stringify(val)); } catch (e) {}
     const t = setTimeout(() => {
-      fetch("/api/panel?key=" + apiKey, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: val }) }).catch(() => {});
+      fetch("/api/panel?key=" + apiKey, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ data: val }) }).catch(() => {});
     }, 600);
     return () => clearTimeout(t);
   }, [val, loaded, apiKey]);
@@ -182,7 +184,7 @@ function ArtistSearch() {
   const [tplText, setTplText] = useState(OUTREACH_TEMPLATES[0].text);
   const [copiedId, setCopiedId] = useState(null);
 
-  const api = (qs) => fetch("/api/ya?" + qs).then((r) => r.json());
+  const api = (qs) => fetch("/api/ya?" + qs, { headers: authHeaders() }).then((r) => r.json());
 
   const copyMsg = async (a) => {
     const deltaStr = (a.delta >= 0 ? "+" : "−") + fmt(Math.abs(a.delta || 0));
@@ -393,8 +395,13 @@ export default function Panel() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (pw === PASS) { sessionStorage.setItem("interia_panel_ok", "1"); setOk(true); }
-            else { setPw(""); alert("Неверный пароль"); }
+            sessionStorage.setItem(PKEY, pw);
+            fetch("/api/panel?key=tasks", { headers: { "x-panel-key": pw } })
+              .then((r) => {
+                if (r.ok) { sessionStorage.setItem("interia_panel_ok", "1"); setOk(true); }
+                else { sessionStorage.removeItem(PKEY); setPw(""); alert("Неверный пароль"); }
+              })
+              .catch(() => { sessionStorage.setItem("interia_panel_ok", "1"); setOk(true); });
           }}
           className="w-full max-w-xs text-center"
         >

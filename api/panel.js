@@ -3,6 +3,7 @@
 const URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const TOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const KEYS = { releases: "interia:releases", tasks: "interia:tasks", tasks_ar: "interia:tasks_ar" };
+const PANEL_PASSWORD = process.env.PANEL_PASSWORD; // если задан — API требует заголовок x-panel-key
 
 async function redis(cmd) {
   const r = await fetch(URL, {
@@ -15,6 +16,7 @@ async function redis(cmd) {
 }
 
 export default async function handler(req, res) {
+  if (PANEL_PASSWORD && (req.headers["x-panel-key"] || "") !== PANEL_PASSWORD) return res.status(401).json({ ok: false, error: "unauthorized" });
   if (!URL || !TOK) return res.status(503).json({ ok: false, error: "storage not configured" });
   const key = KEYS[req.query.key];
   if (!key) return res.status(400).json({ ok: false, error: "bad key" });

@@ -1,6 +1,7 @@
 // Прокси к Яндекс.Музыке для A&R-автопоиска. Токен ТОЛЬКО в env (не в коде/гите).
 const BASE = "https://api.music.yandex.net";
 const TOKEN = process.env.YANDEX_MUSIC_TOKEN;
+const PANEL_PASSWORD = process.env.PANEL_PASSWORD; // если задан — требуется заголовок x-panel-key
 
 async function yget(path) {
   const r = await fetch(BASE + path, {
@@ -24,6 +25,7 @@ function artistsFromTracks(tracks) {
 }
 
 export default async function handler(req, res) {
+  if (PANEL_PASSWORD && (req.headers["x-panel-key"] || "") !== PANEL_PASSWORD) return res.status(401).json({ ok: false, error: "unauthorized" });
   if (!TOKEN) return res.status(500).json({ ok: false, error: "Токен не настроен (env YANDEX_MUSIC_TOKEN)" });
   const action = req.query.action;
   try {
