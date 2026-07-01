@@ -77,9 +77,9 @@ function AutoTextarea({ value, onChange, placeholder, className }) {
 function Tracker({ cols, rows, setRows }) {
   const raw = Array.isArray(rows) ? rows : [];
   const hasPriority = cols.some((c) => c.type === "priority");
-  const PRANK = { red: 0, yellow: 1, "": 2, green: 3 }; // красный вверх, зелёный вниз
+  const PRANK = { "": 0, red: 1, yellow: 2, green: 3 }; // без цвета вверх, зелёный вниз
   const list = hasPriority
-    ? raw.map((r, idx) => ({ r, idx })).sort((a, b) => ((PRANK[a.r.priority || ""] ?? 2) - (PRANK[b.r.priority || ""] ?? 2)) || (a.idx - b.idx)).map((x) => x.r)
+    ? raw.map((r, idx) => ({ r, idx })).sort((a, b) => ((PRANK[a.r.priority || ""] ?? 0) - (PRANK[b.r.priority || ""] ?? 0)) || (a.idx - b.idx)).map((x) => x.r)
     : raw;
   const update = (i, key, value) => setRows(list.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
   const add = () => setRows([...list, emptyRow(cols)]);
