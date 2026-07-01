@@ -8,6 +8,12 @@ const DUE_OPTS = ["1 day", "2 day", "3 day", "4 day", "5 day", "6 day", "7 day",
 const PRIORITY_COLORS = { red: "#ef4444", yellow: "#eab308", green: "#22c55e" };
 const PRIORITY_ORDER = ["", "red", "yellow", "green"];
 
+const OUTREACH_TEMPLATES = [
+  { name: "Стандарт", text: "Привет, {name}! На связи INTERIA! RECORDS. Слушаем тебя — твой звук заходит. Предлагаем выпускать релизы с нами: 90% дохода тебе, бесплатная обложка на каждый релиз и питчинг в редакторские плейлисты площадок. Всё официально, по договору. Расскажем подробнее?" },
+  { name: "Коротко", text: "Привет, {name}! Это лейбл INTERIA!. Зашёл твой материал — хотим предложить сотрудничество: 90% тебе, обложки и питчинг за нами. Интересно обсудить?" },
+  { name: "Дружеский", text: "{name}, привет! Кайфанули от твоих треков. Мы — INTERIA! RECORDS. Работаем честно: 90/10 в твою пользу, делаем обложки и питчим релизы в плейлисты. Скинуть условия?" },
+];
+
 const RELEASE_COLS = [
   { key: "artist", label: "Артист" },
   { key: "title", label: "Релиз" },
@@ -159,8 +165,21 @@ function ArtistSearch() {
   const [err, setErr] = useState("");
   const [note, setNote] = useState("");
   const [onlyContacts, setOnlyContacts] = useState(true);
+  const [tplText, setTplText] = useState(OUTREACH_TEMPLATES[0].text);
+  const [copiedId, setCopiedId] = useState(null);
 
   const api = (qs) => fetch("/api/ya?" + qs).then((r) => r.json());
+
+  const copyMsg = async (a) => {
+    const msg = tplText.replace(/\{name\}/g, a.name);
+    try { await navigator.clipboard.writeText(msg); }
+    catch (e) {
+      const ta = document.createElement("textarea"); ta.value = msg; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e2) {}
+      document.body.removeChild(ta);
+    }
+    setCopiedId(a.id); setTimeout(() => setCopiedId(null), 1500);
+  };
 
   const searchPl = async (e) => {
     if (e) e.preventDefault();
@@ -257,10 +276,24 @@ function ArtistSearch() {
       {picked && !busy && scanned.length > 0 && <div className="mb-2 text-sm text-white/50">{picked.title}: подходит <b className="text-white">{rows.length}</b> из {scanned.length} (порог {fmt(min)}+)</div>}
 
       {rows.length > 0 && (
+        <div className="mb-3 rounded-xl border border-white/10 bg-white/[.02] p-3">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wider text-white/40">Шаблон сообщения</span>
+            {OUTREACH_TEMPLATES.map((t) => (
+              <button key={t.name} onClick={() => setTplText(t.text)} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/60 hover:bg-white/5">{t.name}</button>
+            ))}
+            <span className="ml-auto text-xs text-white/30">{"{name}"} → имя артиста</span>
+          </div>
+          <textarea value={tplText} onChange={(e) => setTplText(e.target.value)} rows={3}
+            className="w-full resize-y rounded-md border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white outline-none focus:border-white/40" />
+        </div>
+      )}
+
+      {rows.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-white/10">
           <table className="w-full border-collapse text-sm">
             <thead><tr>
-              {["#", "Артист", "Слушателей/мес", "Δ мес", "Контакты", "Я.Музыка"].map((h) => (
+              {["#", "Артист", "Слушателей/мес", "Δ мес", "Контакты", "Я.Музыка", "Сообщение"].map((h) => (
                 <th key={h} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-left text-[11px] uppercase tracking-wider text-white/50">{h}</th>
               ))}
             </tr></thead>
@@ -277,6 +310,11 @@ function ArtistSearch() {
                     )) : <span className="text-white/25">—</span>}
                   </td>
                   <td className="border-b border-white/[.06] px-3 py-2"><a href={a.url} target="_blank" rel="noreferrer" className="text-white/50 underline hover:text-white">открыть</a></td>
+                  <td className="border-b border-white/[.06] px-3 py-2">
+                    <button onClick={() => copyMsg(a)} className={"whitespace-nowrap rounded-md border px-2.5 py-1 text-xs transition " + (copiedId === a.id ? "border-green-500/40 text-green-400" : "border-white/15 text-white/80 hover:bg-white/5")}>
+                      {copiedId === a.id ? "✓ скопировано" : "✉ копировать"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
