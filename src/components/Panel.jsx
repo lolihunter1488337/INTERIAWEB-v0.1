@@ -369,78 +369,136 @@ function ArtistSearch() {
   );
 }
 
-// ——— ПУЛЬТ АРТИСТОВ (мини-CRM: стадии, формы, «молчит N дней») ———
-const ARTIST_STAGES = ["Согласился", "Онбординг", "Документы", "Трек-форма", "Питч-форма", "Отгружен", "Вышел", "Завис"];
-function daysSince(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return null;
-  return Math.floor((Date.now() - d.getTime()) / 86400000);
-}
+// ——— ПУЛЬТ АРТИСТОВ (Label OS): артист → треки, вёдра INTERIA CONTROL ———
+const normArtist = (a) => ({
+  artist: a.artist || "", chat: a.chat || "", owner: a.owner || "", contact: a.contact || "",
+  docs: a.docs !== undefined ? !!a.docs : !!a.f_doc, last: a.last || "", note: a.note || "",
+  tracks: Array.isArray(a.tracks) ? a.tracks : [],
+});
+const dslA = (s) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : Math.floor((Date.now() - d.getTime()) / 86400000); };
+const thisWeek = (s) => { if (!s) return false; const d = new Date(s); if (isNaN(d.getTime())) return false; const diff = (Date.now() - d.getTime()) / 86400000; return diff >= -1 && diff <= 7; };
+const need_cover = (t) => t.form && !t.cover;
+const ready_dsp = (t) => t.form && t.cover && !t.shipped;
+const need_pitch = (t) => t.shipped && !t.pitch;
+const rel_week = (t) => t.released && thisWeek(t.date);
+
+const CONTROL = [
+  ["attention", "🔴 Требуют внимания"], ["overdue", "🟡 Просрочено"], ["ready", "🟢 Готово к DSP"],
+  ["docs", "📄 Ждут документы"], ["cover", "🎨 Ждут обложку"], ["pitch", "📝 Ждут питч"], ["week", "🎵 Релизы недели"],
+];
 
 function ArtistBoard() {
   const [rows, setRows] = useShared("artists", []);
-  const list = Array.isArray(rows) ? rows : [];
-  const upd = (i, k, v) => setRows(list.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
-  const add = () => setRows([...list, { artist: "", chat: "", owner: "", stage: "Согласился", f_doc: false, f_track: false, f_pitch: false, last: "", note: "" }]);
-  const del = (i) => setRows(list.filter((_, idx) => idx !== i));
-  const inp = "w-full rounded-md border border-white/10 bg-white/[.04] px-2.5 py-1.5 text-white outline-none transition placeholder:text-white/30 focus:border-white/40 focus:bg-white/[.08]";
-  const Check = ({ on, onClick }) => (
-    <button onClick={onClick} className={"mx-auto grid h-7 w-7 place-items-center rounded-md border transition " + (on ? "border-green-500/40 bg-green-500/15 text-green-400" : "border-white/15 text-white/25 hover:bg-white/5")}>{on ? "✓" : "○"}</button>
-  );
+  const list = (Array.isArray(rows) ? rows : []).map(normArtist);
+  const [filter, setFilter] = useState(null);
+  const [open, setOpen] = useState(null);
+
+  const setA = (i, patch) => setRows(list.map((a, idx) => (idx === i ? { ...a, ...patch } : a)));
+  const addA = () => setRows([...list, normArtist({})]);
+  const delA = (i) => setRows(list.filter((_, idx) => idx !== i));
+  const setTracks = (i, tracks) => setA(i, { tracks });
+  const addT = (i) => setTracks(i, [...list[i].tracks, { title: "", form: false, cover: false, shipped: false, pitch: false, released: false, date: "" }]);
+  const updT = (i, ti, patch) => setTracks(i, list[i].tracks.map((t, idx) => (idx === ti ? { ...t, ...patch } : t)));
+  const delT = (i, ti) => setTracks(i, list[i].tracks.filter((_, idx) => idx !== ti));
+
+  const overdue = (a) => { const d = dslA(a.last); return d != null && d >= 5 && (!a.docs || a.tracks.some(need_pitch)); };
+  const preds = {
+    attention: (a) => a.tracks.some((t) => need_cover(t) || ready_dsp(t)),
+    overdue, ready: (a) => a.tracks.some(ready_dsp), docs: (a) => !a.docs,
+    cover: (a) => a.tracks.some(need_cover), pitch: (a) => a.tracks.some(need_pitch), week: (a) => a.tracks.some(rel_week),
+  };
+  const counts = Object.fromEntries(CONTROL.map(([k]) => [k, list.filter(preds[k]).length]));
+  const indexed = list.map((a, i) => ({ a, i })).filter(({ a }) => !filter || preds[filter](a));
+
+  const inp = "rounded-md border border-white/10 bg-white/[.04] px-2.5 py-1.5 text-white outline-none placeholder:text-white/30 focus:border-white/40 focus:bg-white/[.08]";
+  const Chk = ({ on, onClick }) => <button onClick={onClick} className={"mx-auto grid h-6 w-6 place-items-center rounded border text-xs transition " + (on ? "border-green-500/40 bg-green-500/15 text-green-400" : "border-white/15 text-white/20 hover:bg-white/5")}>{on ? "✓" : ""}</button>;
+  const summary = (a) => {
+    const shipped = a.tracks.filter((t) => t.shipped).length;
+    const cur = a.tracks.find((t) => !t.released);
+    let st = "";
+    if (cur) { if (!cur.form) st = "ждёт трек-форму"; else if (!cur.cover) st = "ждёт обложку"; else if (!cur.shipped) st = "готово к DSP"; else if (!cur.pitch) st = "ждёт питч"; else st = "ждёт выхода"; }
+    return { shipped, cur, st };
+  };
+
   return (
     <div>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {CONTROL.map(([k, label]) => (
+          <button key={k} onClick={() => setFilter(filter === k ? null : k)}
+            className={"rounded-lg border px-3 py-1.5 text-xs transition " + (filter === k ? "border-white bg-white/10 text-white" : "border-white/15 text-white/70 hover:bg-white/5")}>
+            {label} <span className="ml-1 font-bold text-white">{counts[k]}</span>
+          </button>
+        ))}
+        {filter && <button onClick={() => setFilter(null)} className="rounded-lg px-3 py-1.5 text-xs text-white/40 hover:text-white">сбросить ✕</button>}
+      </div>
+
       <div className="mb-3 flex items-center gap-2">
-        <button onClick={add} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">+ Артист</button>
-        <span className="ml-auto text-xs text-white/30">{list.length} артистов</span>
+        <button onClick={addA} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">+ Артист</button>
+        <span className="ml-auto text-xs text-white/30">{indexed.length}{filter ? " / " + list.length : ""} артистов</span>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm">
-        <table className="w-full border-collapse text-sm">
-          <thead><tr>
-            {["#", "Артист", "Чат", "Ответств.", "Стадия", "📄", "🎵", "📣", "Активность", "Заметка", ""].map((h, i) => (
-              <th key={i} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-left text-[11px] uppercase tracking-wider text-white/50">{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>
-            {list.length === 0 && <tr><td colSpan={11} className="px-3 py-6 text-center text-white/30">Пусто. Нажми «+ Артист».</td></tr>}
-            {list.map((r, i) => {
-              const ds = daysSince(r.last);
-              const silent = ds != null && ds >= 5 && !["Вышел", "Отгружен"].includes(r.stage);
-              return (
-                <tr key={i} className="border-b border-white/[.05] odd:bg-white/[.012] hover:bg-white/[.04]">
-                  <td className="px-2 py-1.5 text-center text-xs text-white/30">{i + 1}</td>
-                  <td className="px-2 py-1.5"><input value={r.artist || ""} onChange={(e) => upd(i, "artist", e.target.value)} placeholder="Артист" className={inp + " min-w-[110px]"} /></td>
-                  <td className="px-2 py-1.5">
-                    {r.chat ? <a href={/^https?:\/\//.test(r.chat) ? r.chat : "https://" + r.chat} target="_blank" rel="noreferrer" className="text-xs text-white/60 underline hover:text-white">чат ↗</a> : null}
-                    <input value={r.chat || ""} onChange={(e) => upd(i, "chat", e.target.value)} placeholder="t.me/…" className={inp + " mt-1 min-w-[120px] text-xs"} />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <select value={r.owner || ""} onChange={(e) => upd(i, "owner", e.target.value)} className={inp + " min-w-[115px]"}>
-                      <option value="" className="bg-zinc-900">—</option>
-                      {PEOPLE.map((p) => <option key={p} value={p} className="bg-zinc-900">{p}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <select value={r.stage || ""} onChange={(e) => upd(i, "stage", e.target.value)} className={inp + " min-w-[120px]"}>
-                      {ARTIST_STAGES.map((s) => <option key={s} value={s} className="bg-zinc-900">{s}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-1 py-1.5"><Check on={!!r.f_doc} onClick={() => upd(i, "f_doc", !r.f_doc)} /></td>
-                  <td className="px-1 py-1.5"><Check on={!!r.f_track} onClick={() => upd(i, "f_track", !r.f_track)} /></td>
-                  <td className="px-1 py-1.5"><Check on={!!r.f_pitch} onClick={() => upd(i, "f_pitch", !r.f_pitch)} /></td>
-                  <td className="px-2 py-1.5">
-                    <input type="date" value={r.last || ""} onChange={(e) => upd(i, "last", e.target.value)} className={inp + " min-w-[130px] [color-scheme:dark]"} />
-                    {ds != null && <div className={"mt-1 text-[11px] " + (silent ? "text-red-400" : "text-white/40")}>{ds === 0 ? "сегодня" : "молчит " + ds + " дн"}{silent ? " 🔴" : ""}</div>}
-                  </td>
-                  <td className="px-2 py-1.5"><input value={r.note || ""} onChange={(e) => upd(i, "note", e.target.value)} placeholder="заметка" className={inp + " min-w-[130px]"} /></td>
-                  <td className="px-2 text-center"><button onClick={() => del(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 hover:bg-red-500/15 hover:text-red-400">✕</button></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+      <div className="space-y-2">
+        {indexed.length === 0 && <div className="rounded-xl border border-white/10 px-3 py-6 text-center text-sm text-white/30">{filter ? "В этой категории пусто." : "Пусто. Нажми «+ Артист»."}</div>}
+        {indexed.map(({ a, i }) => {
+          const s = summary(a); const ds = dslA(a.last); const silent = ds != null && ds >= 5; const isOpen = open === i;
+          return (
+            <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm">
+              <div className="flex flex-wrap items-center gap-2 p-2.5">
+                <input value={a.artist} onChange={(e) => setA(i, { artist: e.target.value })} placeholder="Артист" className={inp + " w-40"} />
+                <select value={a.owner} onChange={(e) => setA(i, { owner: e.target.value })} className={inp + " w-32"}>
+                  <option value="" className="bg-zinc-900">— кто ведёт —</option>
+                  {PEOPLE.map((p) => <option key={p} value={p} className="bg-zinc-900">{p}</option>)}
+                </select>
+                <span className="flex items-center gap-1.5 text-xs text-white/50">📄 <Chk on={a.docs} onClick={() => setA(i, { docs: !a.docs })} /></span>
+                <span className="text-xs text-white/50">отгружено <b className="text-white">{s.shipped}</b></span>
+                {s.cur ? <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-white/70">{s.cur.title || "трек"} · {s.st}</span> : <span className="text-[11px] text-white/30">нет активных треков</span>}
+                {ds != null && <span className={"text-[11px] " + (silent ? "text-red-400" : "text-white/40")}>{ds === 0 ? "сегодня" : ds + " дн"}{silent ? " 🔴" : ""}</span>}
+                <div className="ml-auto flex items-center gap-1">
+                  <button onClick={() => setOpen(isOpen ? null : i)} className="rounded-md border border-white/15 px-2.5 py-1 text-xs text-white/70 hover:bg-white/5">{isOpen ? "Свернуть" : "Открыть"}</button>
+                  <button onClick={() => delA(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 hover:bg-red-500/15 hover:text-red-400">✕</button>
+                </div>
+              </div>
+              {isOpen && (
+                <div className="border-t border-white/[.06] p-3">
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <input value={a.chat} onChange={(e) => setA(i, { chat: e.target.value })} placeholder="ссылка на чат (t.me/…)" className={inp + " min-w-[160px] flex-1"} />
+                    <input value={a.contact} onChange={(e) => setA(i, { contact: e.target.value })} placeholder="контакт" className={inp + " w-44"} />
+                    <input type="date" value={a.last} onChange={(e) => setA(i, { last: e.target.value })} className={inp + " w-40 [color-scheme:dark]"} />
+                    {a.chat && <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer" className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">чат ↗</a>}
+                  </div>
+                  <input value={a.note} onChange={(e) => setA(i, { note: e.target.value })} placeholder="заметка" className={inp + " mb-3 w-full"} />
+                  <div className="overflow-x-auto rounded-lg border border-white/10">
+                    <table className="w-full border-collapse text-sm">
+                      <thead><tr>
+                        {["#", "Трек", "Трек-форма", "Обложка", "Отгружен", "Питч", "Вышел", "Дата", ""].map((h, k) => <th key={k} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-2.5 py-1.5 text-left text-[10px] uppercase tracking-wider text-white/50">{h}</th>)}
+                      </tr></thead>
+                      <tbody>
+                        {a.tracks.length === 0 && <tr><td colSpan={9} className="px-3 py-3 text-center text-xs text-white/30">Треков нет. Нажми «+ трек».</td></tr>}
+                        {a.tracks.map((t, ti) => (
+                          <tr key={ti} className="border-b border-white/[.05]">
+                            <td className="px-2.5 py-1.5 text-white/30">{ti + 1}</td>
+                            <td className="px-1.5 py-1"><input value={t.title} onChange={(e) => updT(i, ti, { title: e.target.value })} placeholder="название" className={inp + " min-w-[140px]"} /></td>
+                            <td className="px-1.5 text-center"><Chk on={t.form} onClick={() => updT(i, ti, { form: !t.form })} /></td>
+                            <td className="px-1.5 text-center"><Chk on={t.cover} onClick={() => updT(i, ti, { cover: !t.cover })} /></td>
+                            <td className="px-1.5 text-center"><Chk on={t.shipped} onClick={() => updT(i, ti, { shipped: !t.shipped })} /></td>
+                            <td className="px-1.5 text-center"><Chk on={t.pitch} onClick={() => updT(i, ti, { pitch: !t.pitch })} /></td>
+                            <td className="px-1.5 text-center"><Chk on={t.released} onClick={() => updT(i, ti, { released: !t.released })} /></td>
+                            <td className="px-1.5 py-1"><input type="date" value={t.date} onChange={(e) => updT(i, ti, { date: e.target.value })} className={inp + " w-32 [color-scheme:dark]"} /></td>
+                            <td className="px-1.5 text-center"><button onClick={() => delT(i, ti)} className="text-white/30 hover:text-red-400">✕</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button onClick={() => addT(i)} className="mt-2 rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">+ трек</button>
+                  <div className="mt-3 text-[11px] text-white/25">Здесь появится 🧠 AI-сводка чата — с ботом (Фаза D).</div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-      <div className="mt-3 text-xs text-white/25">📄 документы · 🎵 трек-форма · 📣 питч-форма. «Активность» = дата последнего контакта, «молчит N дн» считается сам. Дальше: авто-статусы из форм + Telegram-бот (ПЛАН ЛЕЙБЛА/ПУЛЬТ-АРТИСТОВ.md).</div>
+      <div className="mt-3 text-xs text-white/25">Пока заполняем вручную. Дальше: формы ставят галочки сами (B), Яндекс отмечает «Вышел» (C), бот + AI-сводки чатов (D).</div>
     </div>
   );
 }
@@ -701,12 +759,13 @@ function Today({ go }) {
   const prank = { "": 1, red: 0, yellow: 2, green: 3 };
   openTasks.sort((a, b) => (prank[a.priority || ""] ?? 1) - (prank[b.priority || ""] ?? 1));
 
-  const dsl = (s) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : Math.floor((Date.now() - d.getTime()) / 86400000); };
-  const attn = (artists || []).filter((a) => a && a.artist).map((a) => {
-    const ds = dsl(a.last); let need = "";
-    if (!a.f_doc) need = "нет документов";
-    else if (a.stage === "Трек-форма" && !a.f_pitch) need = "ждёт питч";
-    if (ds != null && ds >= 5 && !["Вышел", "Отгружен"].includes(a.stage)) need = (need ? need + " · " : "") + "молчит " + ds + " дн";
+  const attn = (artists || []).map(normArtist).filter((a) => a.artist).map((a) => {
+    const ds = dslA(a.last); let need = "";
+    if (!a.docs) need = "нет документов";
+    else if (a.tracks.some(need_pitch)) need = "ждёт питч";
+    else if (a.tracks.some(ready_dsp)) need = "готово к DSP";
+    else if (a.tracks.some(need_cover)) need = "ждёт обложку";
+    if (ds != null && ds >= 5) need = (need ? need + " · " : "") + "молчит " + ds + " дн";
     return { name: a.artist, need };
   }).filter((x) => x.need);
 
