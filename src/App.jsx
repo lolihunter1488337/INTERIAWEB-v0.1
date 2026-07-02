@@ -18,33 +18,11 @@ import Cursor from "./components/Cursor.jsx";
 import NowPlaying from "./components/NowPlaying.jsx";
 import SoundToggle from "./components/SoundToggle.jsx";
 import { playHover, playClick } from "./sound.js";
+import { I18nProvider, useI18n, LANGS } from "./i18n.jsx";
 
 const POPULAR = ["INTERIA!", "11NZZiDENT", "ORXCOOL", "XISAGE", "ClxwnSlxps", "decaying", "HADES!", "NIKOTREN", "KALXSH", "WORTAX!", "LASTCHANCE!", "ZANKYO"];
 const ALL_ARTISTS = ["11NZZiDENT","svdst","DXWNFAME","ZXLXN","decaying","Ethereal Love","LXHXNTER","KXNO1X","Mwwlkiy","SAMUELCG","XISAGE","davxdminxnko","HERXHEIMER","ClxwnSlxps","INTERIA!","ORXCOOL","MXDSTER","BXRNCLUEL","Lutsern","KALXSH","Prblmsss","ZANKYO","MXTXL","BACD","14thesenses","30moll","nxofitov","heesolo","KerAE","DJF1STRIK","DJ QEWER","SX1ENT","RXPSODIYA","WORTAX!","LASTCHANCE!","NIKOTREN","Verious","MXPAL","KAZORO","SLXRDX","Minx","DJ WRZ","1DONE","w1rtyz","WINTERvision","HADES!","WXSP","SKYSET!","STRATIUM!"];
 const REST = ALL_ARTISTS.filter((a) => !POPULAR.includes(a));
-
-const GENRES = ["Бразил-фанк", "Фонк", "Электроника", "Эксперимент"];
-
-const OFFERS = [
-  { n: "01", title: "90% роялти", text: "Артист получает до 90% дохода от цифровых продаж и стриминга в соответствии с условиями договора." },
-  { n: "02", title: "Разработка обложки", text: "Разработка индивидуального дизайна обложки для каждого релиза осуществляется лейблом и предоставляется артисту без дополнительной оплаты." },
-  { n: "03", title: "Питчинг релизов", text: "Подача релизов в редакционные команды ведущих стриминговых платформ для попадания треков в редакторские плейлисты." },
-];
-
-const PROCESS = [
-  { n: "01", t: "Рассмотрение демозаписи", d: "Направьте готовый трек на рассмотрение команде лейбла." },
-  { n: "02", t: "Согласование условий", d: "Обсуждаем формат сотрудничества, условия выпуска и другие детали." },
-  { n: "03", t: "Заключение договора", d: "Юридически закрепляем права и обязанности сторон путём подписания договора." },
-  { n: "04", t: "Выпуск и выплаты", d: "Организуем выпуск и продвижение релиза, после чего артист получает выплаты в соответствии с условиями договора." },
-];
-
-const FAQ = [
-  { q: "Сколько я получаю?", a: "90% доходов — твои, 10% — лейблу. Выше среднерыночных условий." },
-  { q: "Кто делает обложку?", a: "Мы. Уникальный кавер-арт включён в каждый релиз бесплатно." },
-  { q: "Права защищены?", a: "Да. Каждый релиз — отдельный договор с полной юридической силой." },
-  { q: "На каких платформах выходят релизы?", a: "На всех цифровых сервисах и стриминговых платформах международного рынка." },
-  { q: "Что за карточки артистов?", a: "На часть релизов добавляем карточки наших артистов (1NZZiDENT, ØRXCOOL, ClxwnSlxps, INTERIA!, XISAGE) — это усиливает алгоритмическое продвижение и питчинг. На долю артиста никак не влияет." },
-];
 
 function ChromeMark({ className }) {
   return (
@@ -79,8 +57,36 @@ function Logo3D() {
   );
 }
 
+function LangSwitch({ compact }) {
+  const { lang, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
+  const cur = LANGS.find((l) => l.code === lang) || LANGS[0];
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((o) => !o)} aria-label="Язык"
+        className="flex items-center gap-1 rounded-full border border-white/15 px-3 py-1.5 text-[12px] font-semibold text-muted transition-colors hover:text-ink">
+        {cur.label}<span className="text-[9px] opacity-60">▾</span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+            className={"absolute z-50 mt-2 min-w-[130px] overflow-hidden rounded-xl border border-white/10 bg-bg/95 backdrop-blur-xl " + (compact ? "left-0" : "right-0")}>
+            {LANGS.map((l) => (
+              <button key={l.code} onClick={() => { setLang(l.code); setOpen(false); }}
+                className={"flex w-full items-center gap-2 px-3.5 py-2 text-left text-[13px] transition-colors hover:bg-white/5 " + (l.code === lang ? "text-ink" : "text-muted")}>
+                <span className="w-6 text-[11px] font-semibold opacity-70">{l.label}</span>{l.name}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function Nav() {
-  const links = [["Релизы", "#releases"], ["Условия", "#offer"], ["Артисты", "#roster"], ["Мерч", "#/merch"], ["Коллабы", "#/collabs"], ["Мои релизы", "#/myreleases"], ["FAQ", "#faq"]];
+  const { t } = useI18n();
+  const links = [[t("nav.releases"), "#releases"], [t("nav.offer"), "#offer"], [t("nav.roster"), "#roster"], [t("nav.merch"), "#/merch"], [t("nav.collabs"), "#/collabs"], [t("nav.myreleases"), "#/myreleases"], [t("nav.faq"), "#faq"]];
   const [open, setOpen] = useState(false);
   return (
     <motion.header initial={{ y: -90, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -98,8 +104,9 @@ function Nav() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
+          <LangSwitch />
           <MagneticButton href="#demo" className="btn-fill hidden rounded-full px-5 py-2 text-[13px] font-semibold sm:inline-flex">
-            Прислать демо
+            {t("nav.demo")}
           </MagneticButton>
           <button onClick={() => setOpen((o) => !o)} aria-label="Меню" aria-expanded={open}
             className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-ink transition-colors hover:bg-white/5 md:hidden">
@@ -120,7 +127,7 @@ function Nav() {
                   className="border-b border-white/[.05] py-3.5 text-[15px] text-muted transition-colors hover:text-ink">{l}</a>
               ))}
               <a href="#demo" onClick={() => setOpen(false)}
-                className="btn-fill mt-3 rounded-full px-5 py-3 text-center text-[14px] font-semibold">Прислать демо</a>
+                className="btn-fill mt-3 rounded-full px-5 py-3 text-center text-[14px] font-semibold">{t("nav.demo")}</a>
             </div>
           </motion.nav>
         )}
@@ -130,6 +137,7 @@ function Nav() {
 }
 
 function Hero() {
+  const { t } = useI18n();
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], [0, -120]);
@@ -138,7 +146,7 @@ function Hero() {
   return (
     <section id="top" ref={ref} className="relative flex min-h-screen flex-col justify-center overflow-hidden px-5 pb-24 pt-32 md:px-8">
       <div className="pointer-events-none absolute inset-x-5 top-24 z-10 flex items-center justify-between md:inset-x-8">
-        <span className="label text-muted">Независимый лейбл</span>
+        <span className="label text-muted">{t("hero.badge")}</span>
         <span className="label flex items-center gap-2 text-muted"><Cross /> EST. 2026</span>
       </div>
 
@@ -153,14 +161,14 @@ function Hero() {
           </motion.h1>
 
           <motion.div variants={fadeUp} className="mt-10 flex flex-wrap justify-center gap-3">
-            <MagneticButton href="#demo" className="btn-fill rounded-full px-7 py-3.5 text-[15px] font-semibold">Прислать демо →</MagneticButton>
-            <MagneticButton href="#releases" className="rounded-full border border-white/15 px-7 py-3.5 text-[15px] font-medium text-ink transition-colors hover:bg-white/5">Слушать релизы</MagneticButton>
+            <MagneticButton href="#demo" className="btn-fill rounded-full px-7 py-3.5 text-[15px] font-semibold">{t("hero.demo")}</MagneticButton>
+            <MagneticButton href="#releases" className="rounded-full border border-white/15 px-7 py-3.5 text-[15px] font-medium text-ink transition-colors hover:bg-white/5">{t("hero.listen")}</MagneticButton>
           </motion.div>
         </motion.div>
       </motion.div>
 
       <motion.div style={{ opacity: op }} className="relative z-10 mx-auto mt-12 grid w-full max-w-2xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:mt-16">
-        {[["90", "% артисту"], ["10", "% лейблу"], ["60", "+ артистов"]].map(([n, l], i) => (
+        {[["90", t("hero.s1")], ["10", t("hero.s2")], ["60", t("hero.s3")]].map(([n, l], i) => (
           <div key={i} className="grid min-h-[104px] place-items-center bg-bg px-3 py-5 text-center">
             <div>
               <div className="text-3xl font-bold tracking-tight md:text-4xl"><Counter to={parseInt(n)} /></div>
@@ -202,20 +210,16 @@ function ArtistStrip() {
   );
 }
 
-const VALUES = [
-  { t: "Свобода", d: "Без границ и рамок." },
-  { t: "Творчество", d: "Новые идеи, новый звук." },
-  { t: "Подлинность", d: "Настоящие люди и искусство." },
-];
-
 function Manifesto() {
+  const { t } = useI18n();
+  const values = [0, 1, 2].map((i) => ({ t: t(`val.${i}.t`), d: t(`val.${i}.d`) }));
   return (
     <section id="about" className="relative mx-auto max-w-5xl px-5 py-28 md:px-8 md:py-40">
-      <Reveal><Tag n="01">Манифест</Tag></Reveal>
+      <Reveal><Tag n="01">{t("manifesto.tag")}</Tag></Reveal>
       <ScrollText className="mt-8 text-[clamp(26px,4.6vw,60px)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink"
-        text="Мы создаём будущее музыки. Остальное — история." />
+        text={t("manifesto.text")} />
       <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:grid-cols-3">
-        {VALUES.map((v, i) => (
+        {values.map((v, i) => (
           <div key={i} className="bg-bg p-7">
             <div className="label label-dim">0{i + 1}</div>
             <div className="mt-5 text-2xl font-semibold tracking-tight">{v.t}</div>
@@ -228,15 +232,16 @@ function Manifesto() {
 }
 
 function ReleasesSection() {
+  const { t } = useI18n();
   return (
     <section id="releases" className="relative py-20 md:py-28">
       <div className="mx-auto mb-9 flex max-w-6xl items-end justify-between gap-4 px-5 md:px-8">
         <Reveal>
-          <Tag n="02">Каталог</Tag>
-          <h2 className="mt-5 text-[clamp(30px,5vw,62px)] font-bold leading-[.95] tracking-[-0.035em]">Релизы</h2>
+          <Tag n="02">{t("rel.tag")}</Tag>
+          <h2 className="mt-5 text-[clamp(30px,5vw,62px)] font-bold leading-[.95] tracking-[-0.035em]">{t("rel.title")}</h2>
         </Reveal>
         <a href="https://music.yandex.ru/label/6401624" target="_blank" rel="noreferrer"
-          className="label hidden whitespace-nowrap text-muted transition-colors hover:text-ink md:block">Весь каталог →</a>
+          className="label hidden whitespace-nowrap text-muted transition-colors hover:text-ink md:block">{t("rel.all")}</a>
       </div>
       <Reveal><Releases /></Reveal>
     </section>
@@ -244,12 +249,13 @@ function ReleasesSection() {
 }
 
 function Offer() {
+  const { t } = useI18n();
+  const offers = [0, 1, 2].map((i) => ({ n: "0" + (i + 1), title: t(`offer.${i}.title`), text: t(`offer.${i}.text`) }));
   return (
-    <Section id="offer" n="03" tag="Условия" title="Что получает артист"
-      lead="Все условия сотрудничества закрепляются договором и обеспечивают прозрачную и понятную модель работы.">
+    <Section id="offer" n="03" tag={t("offer.tag")} title={t("offer.title")} lead={t("offer.lead")}>
       <motion.div variants={container(0.1)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }}
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {OFFERS.map((o) => (
+        {offers.map((o) => (
           <motion.div key={o.n} variants={fadeUp}>
             <SpotlightCard className="h-full p-6">
               <div className="label label-dim">{o.n}</div>
@@ -264,17 +270,18 @@ function Offer() {
 }
 
 function Process() {
+  const { t } = useI18n();
+  const proc = [0, 1, 2, 3].map((i) => ({ n: "0" + (i + 1), t: t(`proc.${i}.t`), d: t(`proc.${i}.d`) }));
   return (
-    <Section id="process" n="04" tag="Как мы работаем" title="От демозаписи до выпуска релиза"
-      lead="Прозрачный процесс сотрудничества на каждом этапе — от рассмотрения материала до получения роялти.">
+    <Section id="process" n="04" tag={t("proc.tag")} title={t("proc.title")} lead={t("proc.lead")}>
       <motion.div variants={container(0.12)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }}
         className="grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] md:grid-cols-4">
-        {PROCESS.map((p, i) => (
+        {proc.map((p, i) => (
           <motion.div key={i} variants={fadeUp} className="group relative bg-bg p-6 transition-colors hover:bg-white/[.02]">
             <div className="text-5xl font-bold tracking-tight text-white/[.08] transition-colors group-hover:text-ink">{p.n}</div>
             <h3 className="mt-5 text-lg font-semibold">{p.t}</h3>
             <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{p.d}</p>
-            {i < PROCESS.length - 1 && <span className="absolute right-5 top-6 hidden text-muted md:block">→</span>}
+            {i < proc.length - 1 && <span className="absolute right-5 top-6 hidden text-muted md:block">→</span>}
           </motion.div>
         ))}
       </motion.div>
@@ -320,9 +327,9 @@ function YandexIcon({ className }) {
 }
 
 function Roster() {
+  const { t } = useI18n();
   return (
-    <Section id="roster" n="05" tag="Артисты" title="Ростер"
-      lead="С нами более 60 артистов. Вот несколько имён, которых ты точно слышал.">
+    <Section id="roster" n="05" tag={t("roster.tag")} title={t("roster.title")} lead={t("roster.lead")}>
       <motion.div variants={container(0.05)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-70px" }}
         className="grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:grid-cols-2 lg:grid-cols-3">
         {ROSTER.map((a) => (
@@ -344,9 +351,11 @@ function Roster() {
 }
 
 function Faq() {
+  const { t } = useI18n();
+  const faq = [0, 1, 2, 3, 4].map((i) => ({ q: t(`faq.${i}.q`), a: t(`faq.${i}.a`) }));
   return (
-    <Section id="faq" n="06" tag="Вопросы" title="Часто спрашивают" narrow>
-      <Accordion items={FAQ} />
+    <Section id="faq" n="06" tag={t("faq.tag")} title={t("faq.title")} narrow>
+      <Accordion items={faq} />
     </Section>
   );
 }
@@ -363,6 +372,7 @@ function Field({ label, placeholder, area, name }) {
 }
 
 function Demo() {
+  const { t } = useI18n();
   const [status, setStatus] = useState("idle");
   const submit = async (e) => {
     e.preventDefault();
@@ -379,20 +389,20 @@ function Demo() {
     } catch { setStatus("error"); }
     setTimeout(() => setStatus("idle"), 4000);
   };
-  const labelBtn = { idle: "Отправить демо →", sending: "Отправляем…", ok: "Отправлено ✓", error: "Ошибка — напиши @interialabel", local: "Только на сайте (не локально)" }[status];
+  const labelBtn = t("demo.btn." + status);
   return (
     <section id="demo" className="relative overflow-hidden px-5 py-28 md:px-8 md:py-36">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
         style={{ background: "radial-gradient(circle,rgba(255,255,255,.06),transparent 65%)" }} />
       <div className="relative z-10 mx-auto grid max-w-6xl gap-14 md:grid-cols-2 md:items-center">
         <Reveal>
-          <Tag n="07">Демо</Tag>
+          <Tag n="07">{t("demo.tag")}</Tag>
           <h2 className="mt-5 text-[clamp(40px,7vw,84px)] font-bold leading-[.9] tracking-[-0.04em]">
-            Готовы выпустить свой релиз?
+            {t("demo.title")}
           </h2>
-          <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">Направьте демозапись на рассмотрение нашей команде. Мы внимательно изучим материал и свяжемся с вами.</p>
+          <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">{t("demo.lead")}</p>
           <div className="label mt-8 space-y-1.5 text-muted">
-            <div className="text-ink">Контакт</div>
+            <div className="text-ink">{t("demo.contact")}</div>
             <div>interiarecordsru@gmail.com</div>
             <div>@ceo_INTERIA</div>
           </div>
@@ -402,11 +412,11 @@ function Demo() {
           <motion.form onSubmit={submit} className="flex flex-col gap-7">
             <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
             <div className="grid gap-7 sm:grid-cols-2">
-              <Field name="name" label="Имя / псевдоним" placeholder="Имя или псевдоним" />
-              <Field name="contact" label="Контакт для связи" placeholder="@telegram или email" />
+              <Field name="name" label={t("demo.f.name")} placeholder={t("demo.f.name.ph")} />
+              <Field name="contact" label={t("demo.f.contact")} placeholder={t("demo.f.contact.ph")} />
             </div>
-            <Field name="link" label="Ссылка на релиз" placeholder="SoundCloud, Google Drive, Dropbox, Яндекс Диск или другой сервис с открытым доступом." />
-            <Field name="about" label="Дополнительная информация" placeholder="Кратко расскажите о себе, музыкальном стиле, опыте и целях сотрудничества." area />
+            <Field name="link" label={t("demo.f.link")} placeholder={t("demo.f.link.ph")} />
+            <Field name="about" label={t("demo.f.about")} placeholder={t("demo.f.about.ph")} area />
             <motion.button type="submit" disabled={status === "sending"} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
               className="btn-fill mt-2 flex items-center justify-center overflow-hidden rounded-full px-8 py-4 text-[15px] font-semibold disabled:opacity-70">
               <AnimatePresence mode="wait" initial={false}>
@@ -443,6 +453,10 @@ function ScrollProgress() {
 }
 
 export default function App() {
+  return <I18nProvider><AppInner /></I18nProvider>;
+}
+
+function AppInner() {
   const [loading, setLoading] = useState(true);
   const [route, setRoute] = useState(typeof window !== "undefined" ? window.location.hash : "");
   useEffect(() => {
