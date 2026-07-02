@@ -463,20 +463,45 @@ function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4">
-        <div className="text-[11px] uppercase tracking-wider text-white/40">Как мы растём</div>
-        <p className="mt-2 text-lg font-semibold text-white">Больше артистов → больше релизов → качественный питчинг → больше стримов.</p>
-        <p className="mt-2 text-sm text-white/50">Бюджетов и маркетинга нет. Тянет команда за счёт инструментов и соцсетей. Сплит 90/10, при росте → 80/20. Без выдуманных бюджетов и платного промо.</p>
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        <DashCard title="1 · Трафик артистов" tag="в работе" items={["Автопоиск через Яндекс.Музыку ✅", "Заготовки аутрича ✅", "Контакты из ВК — потом"]} />
-        <DashCard title="2 · Инструменты" tag="в работе" items={["Панель + общие трекеры ✅", "A&R-поиск ✅", "Дашборд-вкладка ✅", "Отгрузка/связь с Believe — обсуждаем"]} />
-        <DashCard title="3 · Соцсети" tag="в плане" items={["Instagram: профиль + план ✅", "Telegram + YouTube — дальше"]} />
+        <div className="text-[11px] uppercase tracking-wider text-white/40">Курс</div>
+        <p className="mt-2 text-lg font-semibold text-white">Строим операционную систему лейбла (Label OS), а не просто CRM.</p>
+        <p className="mt-2 text-sm text-white/50">Экран показывает «что делать сегодня». Статус берём из форм / Яндекса / бота, а не из чтения чатов. Рост: больше артистов → релизов → питчинг. Сплит 90/10 → 80/20. Без выдуманных бюджетов.</p>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <DashCard title="Что НЕ делаем" items={["Выдуманные бюджеты и платное промо", "Фокус на 2–3 артистах вместо потока", "Сплит 70/30", "Форму с ПД до ИП + РКН"]} />
-        <DashCard title="Сейчас в работе" items={["Разделили задачи: команда / A&R", "Связать релиз-трекер с Believe (обсуждаем)", "Соцсети: запуск Instagram", "Авторизация + безопасность — в планах"]} />
+        <DashCard title="✅ Уже работает" items={[
+          "Сайт на домене + SSL + OG",
+          "Приложение: PWA (телефон) + .exe (ПК)",
+          "Панель с логинами на каждого (БД пользователей)",
+          "Трекеры: Релизы · Задачи · Задачи A&R (общие)",
+          "A&R-автопоиск артистов (Яндекс) + аутрич-шаблоны",
+          "Соцсети: календарь Instagram (авто-ротация Вт/Пт)",
+          "INTERIA Bible · языки (5) · аудит безопасности",
+        ]} />
+        <DashCard title="🚧 Строим: Пульт артистов (Label OS)" tag="в работе" items={[
+          "Главный экран INTERIA CONTROL — вёдра работы",
+          "(требуют внимания · просрочено · готово к DSP · ждут доки/обложку/питч)",
+          "Карточка артиста → его треки + статусы по каждому",
+          "🧠 AI-сводка чата (30 сек вместо 300 сообщений)",
+          "Фазы: A оболочка · B формы→авто-статус · C Яндекс «вышел» · D бот+AI",
+        ]} />
       </div>
-      <div className="text-xs text-white/30">Полная версия — в файле ПЛАН ЛЕЙБЛА/ДЭШБОРД.html</div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <DashCard title="💡 Идеи / бэклог" items={[
+          "Believe: план интеграции (доступ уже дали) ⭐",
+          "Брендовые HTML-письма (лого, красивое оформление)",
+          "Автозаполнение форм из профиля артиста",
+          "Логин через почту",
+          "Контент-планы Telegram + YouTube · контакты из ВК",
+          "Свои формы (docs/track/pitch) после ИП",
+        ]} />
+        <DashCard title="🎯 Принципы" items={[
+          "Работа-первична: экран = что делать сегодня, не список людей",
+          "Статус — из форм/Яндекса/бота, не из чтения чатов",
+          "Telegram — источник данных, а не место работы",
+          "Один owner на задачу · всё в общем хранилище · без бюджетов",
+        ]} />
+      </div>
+      <div className="text-xs text-white/25">Подробно: ПЛАН ЛЕЙБЛА → ПУЛЬТ-АРТИСТОВ.md · ДЭШБОРД.html · БЕЗОПАСНОСТЬ.md</div>
     </div>
   );
 }
@@ -615,6 +640,113 @@ function Social() {
   );
 }
 
+// ——— РЕЛИЗЫ: авто-каталог лейбла с Яндекс.Музыки ———
+function LabelReleases() {
+  const [rows, setRows] = useState([]);
+  const [busy, setBusy] = useState(true);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    fetch("/api/ya?action=labelReleases", { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((j) => { if (j && j.ok) setRows(j.albums || []); else setErr("Не удалось загрузить каталог."); setBusy(false); })
+      .catch(() => { setErr("Ошибка сети (работает только на боевом сайте)."); setBusy(false); });
+  }, []);
+  const cov = (c) => (c ? "https://" + c.replace("%%", "100x100") : "");
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <div className="text-sm text-white/60">Каталог лейбла с Яндекс.Музыки — обновляется сам</div>
+        <span className="ml-auto text-xs text-white/30">{rows.length} релизов</span>
+      </div>
+      {busy && <div className="text-sm text-white/50">Загружаю каталог…</div>}
+      {err && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{err}</div>}
+      {!busy && !err && (
+        <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm">
+          <table className="w-full border-collapse text-sm">
+            <thead><tr>
+              {["#", "", "Релиз", "Артисты", "Год", ""].map((h, i) => <th key={i} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-left text-[11px] uppercase tracking-wider text-white/50">{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {rows.map((a, i) => (
+                <tr key={a.id} className="border-b border-white/[.05] odd:bg-white/[.012] hover:bg-white/[.04]">
+                  <td className="px-3 py-2 text-white/30">{i + 1}</td>
+                  <td className="px-2 py-1.5">{a.cover ? <img src={cov(a.cover)} alt="" loading="lazy" className="h-9 w-9 rounded object-cover" /> : <div className="h-9 w-9 rounded bg-white/5" />}</td>
+                  <td className="px-3 py-2 font-semibold text-white">{a.title}</td>
+                  <td className="px-3 py-2 text-white/70">{a.artists}</td>
+                  <td className="px-3 py-2 text-white/50">{a.year || ""}</td>
+                  <td className="px-3 py-2"><a href={a.url} target="_blank" rel="noreferrer" className="whitespace-nowrap text-white/50 underline hover:text-white">открыть ↗</a></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ——— СЕГОДНЯ: что нужно сделать сегодня (соцсети + задачи + артисты) ———
+function Today({ go }) {
+  const [tasks] = useShared("tasks", []);
+  const [tasksAr] = useShared("tasks_ar", []);
+  const [artists] = useShared("artists", []);
+  const [igDone] = useShared("social_ig_done", []);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
+  const igPlan = igPlanFor(now);
+  const dk = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
+  const igPosted = (igDone || []).includes(dk);
+
+  const openTasks = [...(tasks || []), ...(tasksAr || [])].filter((t) => t && t.task && t.status !== "Готово");
+  const prank = { "": 1, red: 0, yellow: 2, green: 3 };
+  openTasks.sort((a, b) => (prank[a.priority || ""] ?? 1) - (prank[b.priority || ""] ?? 1));
+
+  const dsl = (s) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : Math.floor((Date.now() - d.getTime()) / 86400000); };
+  const attn = (artists || []).filter((a) => a && a.artist).map((a) => {
+    const ds = dsl(a.last); let need = "";
+    if (!a.f_doc) need = "нет документов";
+    else if (a.stage === "Трек-форма" && !a.f_pitch) need = "ждёт питч";
+    if (ds != null && ds >= 5 && !["Вышел", "Отгружен"].includes(a.stage)) need = (need ? need + " · " : "") + "молчит " + ds + " дн";
+    return { name: a.artist, need };
+  }).filter((x) => x.need);
+
+  const Card = ({ children }) => <div className="rounded-xl border border-white/10 bg-white/[.03] p-4">{children}</div>;
+  const Btn = ({ tab, children }) => <button onClick={() => go(tab)} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">{children}</button>;
+
+  return (
+    <div className="space-y-4">
+      <div className="text-lg font-semibold capitalize text-white">Сегодня · {dateStr}</div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card>
+          <div className="mb-1 text-[11px] uppercase tracking-wider text-white/40">📣 Соцсети</div>
+          {igPlan ? (igPosted
+            ? <div className="text-sm text-green-400">✅ Пост отмечен выполненным</div>
+            : <div><div className="text-white">Сегодня пост в Instagram:</div><div className="mt-1 text-lg font-semibold text-white">{igPlan.icon} {igPlan.title}</div></div>)
+            : <div className="text-sm text-white/40">Сегодня постов по плану нет</div>}
+          <div className="mt-3"><Btn tab="social">К соцсетям →</Btn></div>
+        </Card>
+        <Card>
+          <div className="mb-1 flex items-center justify-between"><span className="text-[11px] uppercase tracking-wider text-white/40">✅ Задачи</span><span className="text-2xl font-bold text-white">{openTasks.length}</span></div>
+          <ul className="space-y-1 text-sm text-white/60">
+            {openTasks.slice(0, 5).map((t, i) => <li key={i} className="truncate">{t.priority === "red" ? "🔴 " : ""}{t.task} <span className="text-white/30">· {t.owner || "—"}</span></li>)}
+            {openTasks.length === 0 && <li className="text-white/30">Всё закрыто 🎉</li>}
+          </ul>
+          <div className="mt-3"><Btn tab="tasks">К задачам →</Btn></div>
+        </Card>
+        <Card>
+          <div className="mb-1 flex items-center justify-between"><span className="text-[11px] uppercase tracking-wider text-white/40">🎛 Артисты — внимание</span><span className="text-2xl font-bold text-white">{attn.length}</span></div>
+          <ul className="space-y-1 text-sm text-white/60">
+            {attn.slice(0, 5).map((a, i) => <li key={i} className="truncate"><span className="text-white">{a.name}</span> <span className="text-white/40">— {a.need}</span></li>)}
+            {attn.length === 0 && <li className="text-white/30">Никто не требует действий</li>}
+          </ul>
+          <div className="mt-3"><Btn tab="artists">К пульту →</Btn></div>
+        </Card>
+      </div>
+      <div className="rounded-xl border border-white/10 bg-white/[.02] p-3 text-xs text-white/40">🔔 Пуш-уведомления («сегодня пост!») подключим с Telegram-ботом (утренний дайджест). Пока сводка показывается тут при входе.</div>
+    </div>
+  );
+}
+
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
@@ -622,7 +754,8 @@ export default function Panel() {
   const [authErr, setAuthErr] = useState("");
   const [userName, setUserName] = useState(() => sessionStorage.getItem("interia_panel_name") || "");
   const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); setOk(false); setPw(""); setUserName(""); };
-  const [tab, setTab] = useState("artists");
+  const [tab, setTab] = useState(() => { try { return localStorage.getItem("interia_panel_tab") || "today"; } catch { return "today"; } });
+  useEffect(() => { try { localStorage.setItem("interia_panel_tab", tab); } catch (e) {} }, [tab]);
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
   const [tasksAr, setTasksAr] = useShared("tasks_ar", []);
@@ -676,14 +809,15 @@ export default function Panel() {
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["artists", "🎛 Пульт артистов"], ["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📖 Библия"]].map(([id, label]) => (
+          {[["today", "🏠 Сегодня"], ["artists", "🎛 Пульт артистов"], ["dashboard", "Дашборд"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📖 Библия"]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
           ))}
         </div>
 
-        {tab === "artists" ? <ArtistBoard />
+        {tab === "today" ? <Today go={setTab} />
+          : tab === "artists" ? <ArtistBoard />
           : tab === "dashboard" ? <Dashboard />
-          : tab === "releases" ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
+          : tab === "releases" ? <LabelReleases />
           : tab === "tasks" ? <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />
           : tab === "tasks_ar" ? <Tracker cols={TASK_AR_COLS} rows={tasksAr} setRows={setTasksAr} />
           : tab === "social" ? <Social />

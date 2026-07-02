@@ -47,6 +47,18 @@ export default async function handler(req, res) {
       const j = await yget(`/users/${owner}/playlists/${kind}`);
       return res.json({ ok: true, artists: artistsFromTracks(j?.result?.tracks) });
     }
+    if (action === "labelReleases") {
+      const j = await yget("/labels/6401624/albums?sortBy=year&page=0&pageSize=300");
+      const albums = (j?.result?.albums || []).map((a) => ({
+        id: a.id,
+        title: a.title,
+        artists: (a.artists || []).map((x) => x.name).join(", "),
+        year: a.year,
+        cover: a.coverUri || "",
+        url: "https://music.yandex.ru/album/" + a.id,
+      }));
+      return res.json({ ok: true, albums, total: j?.result?.pager?.total || albums.length });
+    }
     if (action === "chartArtists") {
       const j = await yget(`/landing3/chart`);
       return res.json({ ok: true, artists: artistsFromTracks(j?.result?.chart?.tracks) });
