@@ -37,7 +37,7 @@ export default function Bible() {
   return (
     <div className="flex flex-col gap-4 md:flex-row">
       <aside className="w-full shrink-0 md:w-60">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по Библии…"
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по базе знаний…"
           className="mb-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/40" />
         <div className="max-h-[65vh] space-y-0.5 overflow-y-auto rounded-xl border border-white/10 bg-white/[.02] p-2">
           {found ? (

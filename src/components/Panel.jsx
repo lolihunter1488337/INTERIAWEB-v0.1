@@ -742,7 +742,7 @@ function Today({ go }) {
           <div className="mt-3"><Btn tab="artists">К пульту →</Btn></div>
         </Card>
       </div>
-      <div className="rounded-xl border border-white/10 bg-white/[.02] p-3 text-xs text-white/40">🔔 Пуш-уведомления («сегодня пост!») подключим с Telegram-ботом (утренний дайджест). Пока сводка показывается тут при входе.</div>
+      <div className="rounded-xl border border-white/10 bg-white/[.02] p-3 text-xs text-white/40">Заходи сюда каждый день — здесь вся картина дня: что постить, какие задачи и кто из артистов требует действий.</div>
     </div>
   );
 }
@@ -809,7 +809,7 @@ export default function Panel() {
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["today", "🏠 Сегодня"], ["artists", "🎛 Пульт артистов"], ["dashboard", "Дашборд"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📖 Библия"]].map(([id, label]) => (
+          {[["today", "🏠 Сегодня"], ["artists", "🎛 Пульт артистов"], ["dashboard", "Дашборд"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📚 База знаний"]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
           ))}
         </div>
