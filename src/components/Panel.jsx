@@ -371,6 +371,7 @@ function ArtistSearch() {
 
 // ——— ПУЛЬТ АРТИСТОВ (Label OS): артист → треки, вёдра INTERIA CONTROL ———
 const normArtist = (a) => ({
+  ...a,
   artist: a.artist || "", chat: a.chat || "", owner: a.owner || "", contact: a.contact || "",
   docs: a.docs !== undefined ? !!a.docs : !!a.f_doc, last: a.last || "", note: a.note || "",
   tracks: Array.isArray(a.tracks) ? a.tracks : [],
