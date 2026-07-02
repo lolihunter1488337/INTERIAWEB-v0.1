@@ -28,3 +28,10 @@ window.addEventListener("error", (e) => {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <ErrorBoundary><App /></ErrorBoundary>
 );
+
+// PWA: регистрируем service worker (для установки приложения на телефон/ПК)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
