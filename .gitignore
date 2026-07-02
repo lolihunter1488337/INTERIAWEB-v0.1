@@ -4,3 +4,8 @@ dev.log
 .vite
 .DS_Store
 *.log
+
+.env
+.env.*
+.vercel
+*.log
