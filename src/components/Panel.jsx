@@ -519,6 +519,10 @@ function Social() {
 export default function Panel() {
   const [ok, setOk] = useState(() => sessionStorage.getItem("interia_panel_ok") === "1");
   const [pw, setPw] = useState("");
+  const [login, setLogin] = useState("");
+  const [authErr, setAuthErr] = useState("");
+  const [userName, setUserName] = useState(() => sessionStorage.getItem("interia_panel_name") || "");
+  const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); setOk(false); setPw(""); setUserName(""); };
   const [tab, setTab] = useState("dashboard");
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
@@ -530,20 +534,28 @@ export default function Panel() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            sessionStorage.setItem(PKEY, pw);
-            fetch("/api/panel?key=tasks", { headers: { "x-panel-key": pw } })
-              .then((r) => {
-                if (r.ok) { sessionStorage.setItem("interia_panel_ok", "1"); setOk(true); }
-                else { sessionStorage.removeItem(PKEY); setPw(""); alert("Неверный пароль"); }
+            setAuthErr("");
+            fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ login, password: pw }) })
+              .then((r) => r.json())
+              .then((j) => {
+                if (j && j.ok) {
+                  sessionStorage.setItem(PKEY, pw);
+                  sessionStorage.setItem("interia_panel_name", j.name);
+                  sessionStorage.setItem("interia_panel_ok", "1");
+                  setUserName(j.name); setOk(true);
+                } else { setAuthErr((j && j.error) || "Неверный логин или пароль"); }
               })
-              .catch(() => { sessionStorage.setItem("interia_panel_ok", "1"); setOk(true); });
+              .catch(() => setAuthErr("Сеть недоступна"));
           }}
-          className="w-full max-w-xs text-center"
+          className="w-full max-w-xs"
         >
-          <div className="mb-1 text-2xl font-bold text-white">INTERIA! · панель</div>
-          <div className="mb-6 text-sm text-white/40">Внутренний доступ</div>
-          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Пароль" autoFocus
-            className="w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-center text-white outline-none focus:border-white/40" />
+          <div className="mb-1 text-center text-2xl font-bold text-white">INTERIA!</div>
+          <div className="mb-6 text-center text-sm text-white/40">Вход для команды</div>
+          <input value={login} onChange={(e) => setLogin(e.target.value)} placeholder="Логин" autoFocus autoCapitalize="none" autoCorrect="off"
+            className="mb-2 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-white/40" />
+          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Пароль"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-white/40" />
+          {authErr && <div className="mt-2 text-center text-sm text-red-400">{authErr}</div>}
           <button className="mt-3 w-full rounded-lg bg-white px-4 py-3 font-semibold text-black">Войти</button>
         </form>
       </div>
@@ -556,9 +568,12 @@ export default function Panel() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <div className="text-xl font-bold">INTERIA! · панель</div>
-            <div className="text-xs text-white/40">Внутренний командный трекер · общий для всех</div>
+            <div className="text-xs text-white/40">{userName ? "Вошёл: " + userName : "Командный штаб"}</div>
           </div>
-          <a href="#top" className="whitespace-nowrap text-xs text-white/40 hover:text-white">← на сайт</a>
+          <div className="flex items-center gap-3 text-xs text-white/40">
+            <a href="#top" className="whitespace-nowrap hover:text-white">← на сайт</a>
+            <button onClick={logout} className="whitespace-nowrap rounded-md border border-white/15 px-2.5 py-1 hover:bg-white/5 hover:text-white">Выйти</button>
+          </div>
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
