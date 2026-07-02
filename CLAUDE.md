@@ -72,6 +72,17 @@
 - Токен Яндекса (OAuth, ~1 год) получали через oauth.yandex.ru client_id=23cabbbdc6cd418abb4b39c32c41195d.
 - TODO: добор контактов из ВК для артистов без links; шаблоны аутрича для A&R.
 
+## 🔒 БЕЗОПАСНОСТЬ v2 (аудит 2026-07-02, установлены 820 cyber-скиллов в ~/.claude/skills)
+- npm audit: было 8 уязв. → удалил мёртвый ChromeBlob.jsx + three/@react-three (не в бандле, tree-shaken),
+  jimp переведён в devDeps. ИТОГ: `npm audit --omit=dev` = **0 уязвимостей в прод-зависимостях** ✅.
+- Секретов в исходниках нет ✅. .gitignore теперь закрывает .env/.env.*/.vercel/*.log.
+- ОСТАЁТСЯ ЗАКРЫТЬ ДО ЗАПУСКА (сайт в мир ~через 4 дня):
+  1) 🔴 добавить env PANEL_PASSWORD в Vercel (иначе /api/panel и /api/ya открыты) — код готов.
+  2) ⚠️ api/demo.js — добавить лимит длины полей + троттлинг (анти-спам в Telegram).
+  3) ⚠️ Bible: dangerouslySetInnerHTML(marked) — контент наш/доверенный, риск низкий; можно добавить sanitize.
+  4) Большая цель: БД авторизации с логином/паролем на каждого работника (см. ниже).
+- Скиллы (820 шт) активируются после ПЕРЕЗАПУСКА Claude Code.
+
 ## 🔒 БЕЗОПАСНОСТЬ (аудит 2026-07-01)
 - ✅ Заголовки ок: CSP/HSTS/X-Frame/nosniff/COOP/CORP/Referrer/Permissions-Policy (в vercel.json).
 - ✅ Секреты НЕ в бандле: Яндекс-токен и KV-токены только в env (проверено grep по прод-JS).
