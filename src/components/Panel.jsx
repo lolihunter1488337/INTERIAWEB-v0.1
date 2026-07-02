@@ -346,6 +346,82 @@ function ArtistSearch() {
   );
 }
 
+// ——— ПУЛЬТ АРТИСТОВ (мини-CRM: стадии, формы, «молчит N дней») ———
+const ARTIST_STAGES = ["Согласился", "Онбординг", "Документы", "Трек-форма", "Питч-форма", "Отгружен", "Вышел", "Завис"];
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+function ArtistBoard() {
+  const [rows, setRows] = useShared("artists", []);
+  const list = Array.isArray(rows) ? rows : [];
+  const upd = (i, k, v) => setRows(list.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
+  const add = () => setRows([...list, { artist: "", chat: "", owner: "", stage: "Согласился", f_doc: false, f_track: false, f_pitch: false, last: "", note: "" }]);
+  const del = (i) => setRows(list.filter((_, idx) => idx !== i));
+  const inp = "w-full rounded-md border border-white/10 bg-white/[.04] px-2.5 py-1.5 text-white outline-none transition placeholder:text-white/30 focus:border-white/40 focus:bg-white/[.08]";
+  const Check = ({ on, onClick }) => (
+    <button onClick={onClick} className={"mx-auto grid h-7 w-7 place-items-center rounded-md border transition " + (on ? "border-green-500/40 bg-green-500/15 text-green-400" : "border-white/15 text-white/25 hover:bg-white/5")}>{on ? "✓" : "○"}</button>
+  );
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <button onClick={add} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">+ Артист</button>
+        <span className="ml-auto text-xs text-white/30">{list.length} артистов</span>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm">
+        <table className="w-full border-collapse text-sm">
+          <thead><tr>
+            {["#", "Артист", "Чат", "Ответств.", "Стадия", "📄", "🎵", "📣", "Активность", "Заметка", ""].map((h, i) => (
+              <th key={i} className="whitespace-nowrap border-b border-white/10 bg-white/[.03] px-3 py-2 text-left text-[11px] uppercase tracking-wider text-white/50">{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {list.length === 0 && <tr><td colSpan={11} className="px-3 py-6 text-center text-white/30">Пусто. Нажми «+ Артист».</td></tr>}
+            {list.map((r, i) => {
+              const ds = daysSince(r.last);
+              const silent = ds != null && ds >= 5 && !["Вышел", "Отгружен"].includes(r.stage);
+              return (
+                <tr key={i} className="border-b border-white/[.05] odd:bg-white/[.012] hover:bg-white/[.04]">
+                  <td className="px-2 py-1.5 text-center text-xs text-white/30">{i + 1}</td>
+                  <td className="px-2 py-1.5"><input value={r.artist || ""} onChange={(e) => upd(i, "artist", e.target.value)} placeholder="Артист" className={inp + " min-w-[110px]"} /></td>
+                  <td className="px-2 py-1.5">
+                    {r.chat ? <a href={/^https?:\/\//.test(r.chat) ? r.chat : "https://" + r.chat} target="_blank" rel="noreferrer" className="text-xs text-white/60 underline hover:text-white">чат ↗</a> : null}
+                    <input value={r.chat || ""} onChange={(e) => upd(i, "chat", e.target.value)} placeholder="t.me/…" className={inp + " mt-1 min-w-[120px] text-xs"} />
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <select value={r.owner || ""} onChange={(e) => upd(i, "owner", e.target.value)} className={inp + " min-w-[115px]"}>
+                      <option value="" className="bg-zinc-900">—</option>
+                      {PEOPLE.map((p) => <option key={p} value={p} className="bg-zinc-900">{p}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <select value={r.stage || ""} onChange={(e) => upd(i, "stage", e.target.value)} className={inp + " min-w-[120px]"}>
+                      {ARTIST_STAGES.map((s) => <option key={s} value={s} className="bg-zinc-900">{s}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-1 py-1.5"><Check on={!!r.f_doc} onClick={() => upd(i, "f_doc", !r.f_doc)} /></td>
+                  <td className="px-1 py-1.5"><Check on={!!r.f_track} onClick={() => upd(i, "f_track", !r.f_track)} /></td>
+                  <td className="px-1 py-1.5"><Check on={!!r.f_pitch} onClick={() => upd(i, "f_pitch", !r.f_pitch)} /></td>
+                  <td className="px-2 py-1.5">
+                    <input type="date" value={r.last || ""} onChange={(e) => upd(i, "last", e.target.value)} className={inp + " min-w-[130px] [color-scheme:dark]"} />
+                    {ds != null && <div className={"mt-1 text-[11px] " + (silent ? "text-red-400" : "text-white/40")}>{ds === 0 ? "сегодня" : "молчит " + ds + " дн"}{silent ? " 🔴" : ""}</div>}
+                  </td>
+                  <td className="px-2 py-1.5"><input value={r.note || ""} onChange={(e) => upd(i, "note", e.target.value)} placeholder="заметка" className={inp + " min-w-[130px]"} /></td>
+                  <td className="px-2 text-center"><button onClick={() => del(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 hover:bg-red-500/15 hover:text-red-400">✕</button></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 text-xs text-white/25">📄 документы · 🎵 трек-форма · 📣 питч-форма. «Активность» = дата последнего контакта, «молчит N дн» считается сам. Дальше: авто-статусы из форм + Telegram-бот (ПЛАН ЛЕЙБЛА/ПУЛЬТ-АРТИСТОВ.md).</div>
+    </div>
+  );
+}
+
 function DashCard({ title, tag, items }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[.03] p-4">
@@ -523,7 +599,7 @@ export default function Panel() {
   const [authErr, setAuthErr] = useState("");
   const [userName, setUserName] = useState(() => sessionStorage.getItem("interia_panel_name") || "");
   const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); setOk(false); setPw(""); setUserName(""); };
-  const [tab, setTab] = useState("dashboard");
+  const [tab, setTab] = useState("artists");
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
   const [tasksAr, setTasksAr] = useShared("tasks_ar", []);
@@ -577,12 +653,13 @@ export default function Panel() {
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
-          {[["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📖 Библия"]].map(([id, label]) => (
+          {[["artists", "🎛 Пульт артистов"], ["dashboard", "Планы"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📖 Библия"]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
           ))}
         </div>
 
-        {tab === "dashboard" ? <Dashboard />
+        {tab === "artists" ? <ArtistBoard />
+          : tab === "dashboard" ? <Dashboard />
           : tab === "releases" ? <Tracker cols={RELEASE_COLS} rows={releases} setRows={setReleases} />
           : tab === "tasks" ? <Tracker cols={TASK_COLS} rows={tasks} setRows={setTasks} />
           : tab === "tasks_ar" ? <Tracker cols={TASK_AR_COLS} rows={tasksAr} setRows={setTasksAr} />
