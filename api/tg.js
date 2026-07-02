@@ -13,26 +13,30 @@ async function tg(method, payload) {
   try { return await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then((r) => r.json()); }
   catch { return null; }
 }
-function artistFromTitle(title) {
-  if (!title) return "";
-  return title.split(/[|—\-]/)[0].trim();
+// Артист-чат = только по шаблону «Артист | INTERIA!» (есть «|», справа содержит INTERIA).
+function parseArtist(title) {
+  if (!title || title.indexOf("|") < 0) return null;
+  const i = title.indexOf("|");
+  const left = title.slice(0, i).trim();
+  const right = title.slice(i + 1);
+  if (!/interia/i.test(right)) return null;
+  return left || null;
 }
 const today = () => new Date().toISOString().slice(0, 10);
 
 async function registerChat(chat) {
   if (!chat || chat.type === "private") return;
+  const name = parseArtist(chat.title);
+  if (!name) return; // командные/прочие чаты (без «| INTERIA!») в Пульт НЕ заводим
   const artists = (await kvGet("interia:artists")) || [];
   let a = artists.find((x) => x && x.tgChatId === chat.id);
   if (!a) {
     let invite = "";
     const r = await tg("exportChatInviteLink", { chat_id: chat.id });
     if (r && r.ok) invite = r.result;
-    artists.push({ artist: artistFromTitle(chat.title) || chat.title || "артист", chat: invite, tgChatId: chat.id, owner: "", contact: "", docs: false, last: today(), note: "", tracks: [] });
+    artists.push({ artist: name, chat: invite, tgChatId: chat.id, owner: "", contact: "", docs: false, last: today(), note: "", tracks: [] });
     await kvSet("interia:artists", artists);
-  } else if (chat.title) {
-    const nm = artistFromTitle(chat.title);
-    if (nm && a.artist !== nm) { a.artist = nm; await kvSet("interia:artists", artists); }
-  }
+  } else if (a.artist !== name) { a.artist = name; await kvSet("interia:artists", artists); }
 }
 async function touchActivity(chatId) {
   const artists = (await kvGet("interia:artists")) || [];
