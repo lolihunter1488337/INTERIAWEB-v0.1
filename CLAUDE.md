@@ -138,9 +138,16 @@
   App обёрнут в I18nProvider (App = провайдер, AppInner = логика). Старые константы GENRES/OFFERS/PROCESS/FAQ удалены.
 - НЕ переведено (задел на будущее): ComingSoon (merch/collabs/myreleases), контент панели #/panel. Добавлять ключи в DICT по образцу.
 
+## 💻 DESKTOP-ПРИЛОЖЕНИЕ .exe (СДЕЛАНО 2026-07-02)
+- Проект: `C:\Users\1\Desktop\INTERIA RECORDS\INTERIA APP` (Electron, main.js грузит https://www.interiarecords.com/#/panel).
+- Собран через **@electron/packager** (electron-builder НЕ работает: тянет winCodeSign с macOS-симлинками, Windows без
+  режима разработчика/админа их не создаёт). Иконка: build/icon.ico (png-to-ico из icon-512). jimp остаётся 0.22.12.
+- Готовый .exe: `INTERIA APP/dist/INTERIA-win32-x64/INTERIA.exe`. Для раздачи: `INTERIA RECORDS/INTERIA-Приложение-Windows.zip` (~110МБ).
+- Приложение грузит ЖИВУЮ панель → авто-обновляется при деплое сайта, .exe пересобирать не надо (только если менять main.js).
+- Пересборка: `cd "INTERIA APP" && npx @electron/packager . INTERIA --platform=win32 --arch=x64 --icon=build/icon.ico --out=dist --overwrite`.
+- Телефон = PWA (ставится как приложение, уже работает). Магазины (App Store/Play) — отдельный большой проект, не делаем.
+
 ## 📝 TODO / ИДЕИ (2026-07-02, новые)
-- ⚠️ ПРИЛОЖЕНИЕ: юзер хотел НАСТОЯЩИЙ desktop .exe со своим интерфейсом, а не PWA-«установить с сайта».
-  Нужно собрать реальный .exe (Electron или Tauri), который открывает панель в своём окне. PWA оставить как быстрый вариант для телефона.
 - ИДЕЯ: логин в приложении ЧЕРЕЗ ПОЧТУ (email + пароль / magic-link), не только по нику.
 - ИДЕЯ: у артиста аккаунт → при заполнении форм постоянная инфа (ФИО, ссылки на площадки/соцсети) СОХРАНЯЕТСЯ в профиле,
   не надо вводить каждый раз (автозаполнение из профиля).
