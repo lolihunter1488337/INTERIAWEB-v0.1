@@ -147,6 +147,18 @@
 - Пересборка: `cd "INTERIA APP" && npx @electron/packager . INTERIA --platform=win32 --arch=x64 --icon=build/icon.ico --out=dist --overwrite`.
 - Телефон = PWA (ставится как приложение, уже работает). Магазины (App Store/Play) — отдельный большой проект, не делаем.
 
+## 🤖 TELEGRAM-БОТ (часть 1, СДЕЛАНО 2026-07-02) — @interiaformbot, токен уже в Vercel
+- api/tg.js — ВЕБХУК: my_chat_member/message → registerChat: заводит строку в Пульт ТОЛЬКО для чатов «Артист | INTERIA!»
+  (parseArtist: есть «|» + справа INTERIA; командные чаты не регистрируются). exportChatInviteLink (нужен бот-админ) → chat-ссылка.
+  touchActivity: любое сообщение → last=сегодня (нужен Privacy OFF). Команда /digesthere → сохраняет interia:digest_chat.
+- api/tg-setup.js — разово выставить вебхук: GET /api/tg-setup?k=ПАРОЛЬ (authUser). Ставит webhook на /api/tg.
+- api/digest.js + cron (vercel.json "0 3 * * *" = 6:00 МСК) — считает вёдра из interia:artists + Instagram-пост дня → sendMessage в digest_chat.
+- Форма демо (api/demo.js) шлёт в ФИКСИРОВАННЫЙ GROUP_CHAT_ID — вебхук на это НЕ влияет, в чаты артистов форма НЕ попадает.
+- НАСТРОЙКА (юзер): 1) @BotFather /setprivacy → Disable; 2) открыть /api/tg-setup?k=пароль; 3) в костяк-чат добавить бота + /digesthere;
+  4) добавлять бота (админом) в чаты артистов, называть «Артист | INTERIA!» → строки в Пульте появляются сами.
+- Дальше: D2 онбординг /artist (текст+3 формы), D3 AI-сводки чатов (хранить сообщения + LLM-ключ).
+- ⚠️ Возможен клоббер: бот пишет в interia:artists напрямую, клиент тоже (last-write-wins). Смягчено refresh-on-focus. Позже — мерж.
+
 ## 🎛 ПУЛЬТ АРТИСТОВ — Фаза A (СДЕЛАНО 2026-07-02)
 - Двухуровневая модель (KV interia:artists): артист {artist,chat,owner,contact,docs,last,note,tracks[]}.
   Трек: {title,form,cover,shipped,pitch,released,date}. normArtist() мигрирует старое f_doc→docs.
