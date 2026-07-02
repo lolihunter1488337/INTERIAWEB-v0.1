@@ -41,21 +41,24 @@ const TASK_AR_COLS = [
   { key: "status", label: "Статус", type: "select", options: ["Новая", "В работе", "Готово"] },
 ];
 
-// общий склад данных (Vercel KV через /api/panel) с фолбэком на localStorage
+// общий склад данных (Vercel KV) с фолбэком на localStorage.
+// Анти-баг «удалённое возвращается»: refresh при фокусе окна + dirty-guard (не перезаписываем несохранённым).
+const arrOf = (x) => (Array.isArray(x) ? x : []);
 function useShared(apiKey, initial) {
   const [val, setVal] = useState(initial);
   const [loaded, setLoaded] = useState(false);
+  const dirty = useRef(false); // есть несохранённые локальные изменения
   const lk = "interia_panel_" + apiKey;
+  const readLocal = () => { try { return arrOf(JSON.parse(localStorage.getItem(lk) || "[]")); } catch { return []; } };
+
   useEffect(() => {
     let alive = true;
-    const arr = (x) => (Array.isArray(x) ? x : []);
-    const readLocal = () => { try { return arr(JSON.parse(localStorage.getItem(lk) || "[]")); } catch { return []; } };
     fetch("/api/panel?key=" + apiKey, { headers: authHeaders() })
       .then((r) => r.json())
       .then((j) => {
         if (!alive) return;
         const local = readLocal();
-        const remote = arr(j && j.data);
+        const remote = arrOf(j && j.data);
         if (j && j.ok) {
           if (remote.length === 0 && local.length > 0) setVal(local); // миграция локального в общий
           else setVal(remote);
@@ -65,14 +68,34 @@ function useShared(apiKey, initial) {
       .catch(() => { const local = readLocal(); if (local.length) setVal(local); setLoaded(true); });
     return () => { alive = false; };
   }, [apiKey]);
+
+  // сохранение (debounce). Отмечаем dirty, пока запись не долетела до сервера.
   useEffect(() => {
     if (!loaded) return;
+    dirty.current = true;
     try { localStorage.setItem(lk, JSON.stringify(val)); } catch (e) {}
     const t = setTimeout(() => {
-      fetch("/api/panel?key=" + apiKey, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ data: val }) }).catch(() => {});
+      fetch("/api/panel?key=" + apiKey, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ data: val }) })
+        .then(() => { dirty.current = false; })
+        .catch(() => { dirty.current = false; });
     }, 600);
     return () => clearTimeout(t);
   }, [val, loaded, apiKey]);
+
+  // при возврате в окно/вкладку — подтягиваем свежее с сервера (если нет несохранённых правок)
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || dirty.current) return;
+      fetch("/api/panel?key=" + apiKey, { headers: authHeaders() })
+        .then((r) => r.json())
+        .then((j) => { if (j && j.ok && !dirty.current) setVal(arrOf(j.data)); })
+        .catch(() => {});
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => { document.removeEventListener("visibilitychange", refresh); window.removeEventListener("focus", refresh); };
+  }, [apiKey]);
+
   return [val, setVal];
 }
 
