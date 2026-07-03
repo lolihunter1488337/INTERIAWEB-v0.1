@@ -393,6 +393,14 @@ function ArtistBoard() {
   const list = (Array.isArray(rows) ? rows : []).map(normArtist);
   const [filter, setFilter] = useState(null);
   const [open, setOpen] = useState(null);
+  const [sent, setSent] = useState({});
+  const sendWelcome = (a) => {
+    if (!a.tgChatId) return;
+    fetch("/api/tg-send", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ chatId: a.tgChatId }) })
+      .then((r) => r.json())
+      .then((j) => { if (j && j.ok) { setSent((s) => ({ ...s, [a.tgChatId]: true })); setTimeout(() => setSent((s) => { const n = { ...s }; delete n[a.tgChatId]; return n; }), 3000); } else alert("Не отправилось: " + ((j && j.error) || "")); })
+      .catch(() => alert("Ошибка сети"));
+  };
 
   const setA = (i, patch) => setRows(list.map((a, idx) => (idx === i ? { ...a, ...patch } : a)));
   const addA = () => setRows([...list, normArtist({})]);
@@ -466,6 +474,7 @@ function ArtistBoard() {
                     <input value={a.contact} onChange={(e) => setA(i, { contact: e.target.value })} placeholder="контакт" className={inp + " w-44"} />
                     <input type="date" value={a.last} onChange={(e) => setA(i, { last: e.target.value })} className={inp + " w-40 [color-scheme:dark]"} />
                     {a.chat && <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer" className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">чат ↗</a>}
+                    {a.tgChatId && <button onClick={() => sendWelcome(a)} className={"rounded-md border px-3 py-1.5 text-xs transition " + (sent[a.tgChatId] ? "border-green-500/40 text-green-400" : "border-white/15 text-white/70 hover:bg-white/5")}>{sent[a.tgChatId] ? "✓ отправлено" : "✉ Отправить приветствие"}</button>}
                   </div>
                   <input value={a.note} onChange={(e) => setA(i, { note: e.target.value })} placeholder="заметка" className={inp + " mb-3 w-full"} />
                   <div className="overflow-x-auto rounded-lg border border-white/10">
