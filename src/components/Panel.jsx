@@ -350,7 +350,7 @@ function ArtistSearch() {
                   <td className={"border-b border-white/[.06] px-3 py-2 " + (a.delta >= 0 ? "text-green-400" : "text-red-400")}>{a.delta >= 0 ? "+" : ""}{fmt(a.delta)}</td>
                   <td className="border-b border-white/[.06] px-3 py-2">
                     {(a.links && a.links.length) ? a.links.map((l, k) => (
-                      <a key={k} href={l.href} target="_blank" rel="noreferrer" className="mr-2 inline-block text-white/70 underline hover:text-white">{l.type}</a>
+                      <a key={k} href={/^https?:\/\//i.test(l.href || "") ? l.href : "#"} target="_blank" rel="noreferrer noopener" className="mr-2 inline-block text-white/70 underline hover:text-white">{l.type}</a>
                     )) : <span className="text-white/25">—</span>}
                   </td>
                   <td className="border-b border-white/[.06] px-3 py-2"><a href={a.url} target="_blank" rel="noreferrer" className="text-white/50 underline hover:text-white">открыть</a></td>

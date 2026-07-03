@@ -21,6 +21,7 @@ async function redis(cmd) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   if (!authed(req)) return res.status(401).json({ ok: false, error: "unauthorized" });
   if (!URL || !TOK) return res.status(503).json({ ok: false, error: "storage not configured" });
   const key = KEYS[req.query.key];

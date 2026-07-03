@@ -29,11 +29,17 @@ function artistsFromTracks(tracks) {
   return [...map].map(([id, name]) => ({ id, name }));
 }
 
+const isNum = (s) => /^\d+$/.test(String(s || ""));
+
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   if (!authed(req)) return res.status(401).json({ ok: false, error: "unauthorized" });
   if (!TOKEN) return res.status(500).json({ ok: false, error: "Токен не настроен (env YANDEX_MUSIC_TOKEN)" });
   const action = req.query.action;
   try {
+    // защита от инъекции пути / SSRF: id/owner/kind — только числовые
+    if (action === "playlistArtists" && (!isNum(req.query.owner) || !isNum(req.query.kind))) return res.status(400).json({ ok: false, error: "bad params" });
+    if (action === "artists" && !String(req.query.ids || "").split(",").every((x) => x === "" || isNum(x))) return res.status(400).json({ ok: false, error: "bad ids" });
     if (action === "searchPlaylists") {
       const q = encodeURIComponent(req.query.q || "");
       const j = await yget(`/search?text=${q}&type=playlist&page=0&nocorrect=false`);
