@@ -360,13 +360,43 @@ function Faq() {
   );
 }
 
-function Field({ label, placeholder, area, name }) {
-  const base = "w-full border-0 border-b border-white/15 bg-transparent px-0 py-3 text-[16px] text-ink outline-none transition focus:border-ink placeholder:text-faint";
+// validate={"contact"|"link"|null}, forceErr = внешняя ошибка от сервера/submit
+function Field({ label, placeholder, area, name, validate, forceErr = "", onFix }) {
+  const [localErr, setLocalErr] = useState("");
+  const err = forceErr || localErr;
+  const base = "w-full border-0 border-b bg-transparent px-0 py-3 text-[16px] text-ink outline-none transition placeholder:text-faint " +
+    (err ? "border-red-500/70 focus:border-red-400" : "border-white/15 focus:border-ink");
+
+  const check = (val) => {
+    if (forceErr && onFix) onFix(); // сбрасываем внешнюю ошибку как только пользователь начал редактировать
+    const v = val.trim();
+    if (!v) { setLocalErr(""); return; }
+    if (validate === "contact") {
+      const ok = /^@[\w.]{1,64}$/.test(v) || /^[\w.+\-]{1,64}@[\w\-]+\.[a-z]{2,}$/i.test(v);
+      setLocalErr(ok ? "" : "Введи @username или email");
+    }
+    if (validate === "link") {
+      const ok = /^https?:\/\/.{3,}/i.test(v);
+      setLocalErr(ok ? "" : "Вставь ссылку (https://…)");
+    }
+  };
+
   return (
     <label className="flex flex-col gap-2">
       <span className="label text-muted">{label}</span>
-      {area ? <textarea name={name} rows={3} placeholder={placeholder} className={base + " resize-none"} />
-            : <input name={name} type="text" placeholder={placeholder} className={base} />}
+      {area
+        ? <textarea name={name} rows={3} placeholder={placeholder} className={base + " resize-none"}
+            onChange={(e) => check(e.target.value)} />
+        : <input name={name} type="text" placeholder={placeholder} className={base}
+            onChange={(e) => check(e.target.value)} />}
+      <AnimatePresence>
+        {err && (
+          <motion.span key="err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            className="text-[12px] text-red-400 leading-tight">
+            {err}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </label>
   );
 }
@@ -374,6 +404,7 @@ function Field({ label, placeholder, area, name }) {
 function Demo() {
   const { t } = useI18n();
   const [status, setStatus] = useState("idle");
+  const [fieldErr, setFieldErr] = useState("");
   const submit = async (e) => {
     e.preventDefault();
     if (status === "sending") return;
@@ -381,11 +412,26 @@ function Demo() {
     const isLocal = /localhost|127\.0\.0\.1/.test(location.hostname);
     if (isLocal) { setStatus("local"); setTimeout(() => setStatus("idle"), 4500); return; }
     const data = Object.fromEntries(new FormData(form).entries());
+
+    // клиентская проверка перед отправкой
+    const c = String(data.contact || "").trim();
+    const l = String(data.link || "").trim();
+    if (c && !/^@[\w.]{1,64}$/.test(c) && !/^[\w.+\-]{1,64}@[\w\-]+\.[a-z]{2,}$/i.test(c)) {
+      setFieldErr("contact"); return;
+    }
+    if (l && !/^https?:\/\/.{3,}/i.test(l)) {
+      setFieldErr("link"); return;
+    }
+    setFieldErr("");
+
     setStatus("sending");
     try {
       const r = await fetch("/api/demo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const j = await r.json().catch(() => ({ ok: false }));
-      if (j.ok) { setStatus("ok"); form.reset(); } else setStatus("error");
+      if (j.ok) { setStatus("ok"); form.reset(); }
+      else if (j.error === "bad_contact") { setFieldErr("contact"); setStatus("idle"); return; }
+      else if (j.error === "bad_link")    { setFieldErr("link");    setStatus("idle"); return; }
+      else setStatus("error");
     } catch { setStatus("error"); }
     setTimeout(() => setStatus("idle"), 4000);
   };
@@ -413,9 +459,11 @@ function Demo() {
             <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
             <div className="grid gap-7 sm:grid-cols-2">
               <Field name="name" label={t("demo.f.name")} placeholder={t("demo.f.name.ph")} />
-              <Field name="contact" label={t("demo.f.contact")} placeholder={t("demo.f.contact.ph")} />
+              <Field name="contact" label={t("demo.f.contact")} placeholder="@username" validate="contact"
+                forceErr={fieldErr === "contact" ? "Введи @username или email" : ""} onFix={() => setFieldErr("")} />
             </div>
-            <Field name="link" label={t("demo.f.link")} placeholder={t("demo.f.link.ph")} />
+            <Field name="link" label={t("demo.f.link")} placeholder="https://…" validate="link"
+              forceErr={fieldErr === "link" ? "Вставь ссылку (https://…)" : ""} onFix={() => setFieldErr("")} />
             <Field name="about" label={t("demo.f.about")} placeholder={t("demo.f.about.ph")} area />
             <motion.button type="submit" disabled={status === "sending"} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
               className="btn-fill mt-2 flex items-center justify-center overflow-hidden rounded-full px-8 py-4 text-[15px] font-semibold disabled:opacity-70">

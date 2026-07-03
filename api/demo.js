@@ -27,8 +27,22 @@ export default async function handler(req, res) {
     if (n === 1) await kv(["EXPIRE", rlKey, 600]);
     if (n && n > 5) return res.status(429).json({ ok: false, error: "too_many" });
 
-    // минимальная валидация: нужен хотя бы контакт или ссылка
-    if (!String(contact).trim() && !String(link).trim()) return res.status(200).json({ ok: true });
+    // строгая валидация полей
+    const c = String(contact).trim();
+    const l = String(link).trim();
+
+    // нужен хотя бы контакт или ссылка
+    if (!c && !l) return res.status(200).json({ ok: true });
+
+    // контакт: только @username (телеграм/инст) ИЛИ email — ничего другого
+    const contactOk = !c
+      || /^@[\w.]{1,64}$/.test(c)
+      || /^[\w.+\-]{1,64}@[\w\-]+\.[a-z]{2,}$/i.test(c);
+    // ссылка: строго http:// или https://
+    const linkOk = !l || /^https?:\/\/.{3,}/i.test(l);
+
+    if (!contactOk) return res.status(400).json({ ok: false, error: "bad_contact" });
+    if (!linkOk)    return res.status(400).json({ ok: false, error: "bad_link" });
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) return res.status(500).json({ ok: false, error: "config" });
