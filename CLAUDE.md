@@ -147,6 +147,15 @@
 - Пересборка: `cd "INTERIA APP" && npx @electron/packager . INTERIA --platform=win32 --arch=x64 --icon=build/icon.ico --out=dist --overwrite`.
 - Телефон = PWA (ставится как приложение, уже работает). Магазины (App Store/Play) — отдельный большой проект, не делаем.
 
+## СДЕЛАНО пачкой 2026-07-02 (1-2-3-4)
+1. Безопасность: /api/demo рейт-лимит (KV, 5/10мин на IP) + убраны внутренние данные из ответа + валидация (нужен contact|link);
+   /api/ya SSRF-валидация owner/kind/id (только цифры); санитайз href в A&R (http/https); Cache-Control:no-store на API.
+   ОСТАЛОСЬ из аудита: DMARC (DNS — инструкция), DOMPurify для Базы знаний (контент доверенный, отложено).
+2. Бот D2: команда /artist в чате → бот постит приветствие + формы (docs/track; pitch пусто) и заводит карточку (ensureArtist).
+   FORMS в api/tg.js. Питч-ссылку добавить, когда будет.
+3. Брендовое HTML-письмо: INTERIA RECORDS/ПИСЬМА/шаблон-письма.html (email-safe, лого с /icon-192.png, {{name}}/{{message}}/{{cta}}).
+4. Контент-планы: ПЛАН ЛЕЙБЛА/СОЦСЕТИ-TELEGRAM-YOUTUBE.md (TG рубрики+ритм, YouTube визуалайзеры+Shorts).
+
 ## 🤖 TELEGRAM-БОТ (часть 1, СДЕЛАНО 2026-07-02) — @interiaformbot, токен уже в Vercel
 - api/tg.js — ВЕБХУК: my_chat_member/message → registerChat: заводит строку в Пульт ТОЛЬКО для чатов «Артист | INTERIA!»
   (parseArtist: есть «|» + справа INTERIA; командные чаты не регистрируются). exportChatInviteLink (нужен бот-админ) → chat-ссылка.
