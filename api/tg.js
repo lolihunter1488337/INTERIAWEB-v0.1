@@ -36,12 +36,34 @@ async function registerChat(chat) {
     if (r && r.ok) invite = r.result;
     artists.push({ artist: name, chat: invite, tgChatId: chat.id, owner: "", contact: "", docs: false, last: today(), note: "", tracks: [] });
     await kvSet("interia:artists", artists);
-  } else if (a.artist !== name) { a.artist = name; await kvSet("interia:artists", artists); }
+  } else {
+    let changed = false;
+    if (a.artist !== name) { a.artist = name; changed = true; }
+    // авто-добавляем ссылку на чат если она пустая (бот должен быть админом)
+    if (!a.chat) {
+      const r = await tg("exportChatInviteLink", { chat_id: chat.id });
+      if (r && r.ok && r.result) { a.chat = r.result; changed = true; }
+    }
+    if (changed) await kvSet("interia:artists", artists);
+  }
 }
 async function touchActivity(chatId) {
   const artists = (await kvGet("interia:artists")) || [];
   const a = artists.find((x) => x && x.tgChatId === chatId);
   if (a) { a.last = today(); await kvSet("interia:artists", artists); }
+}
+
+// сохраняем последние 30 сообщений чата для AI-сводки
+async function storeMessage(chatId, from, text) {
+  if (!text || !text.trim()) return;
+  const key = "interia:msgs:" + chatId;
+  const raw = await redis(["GET", key]);
+  let msgs = [];
+  try { msgs = JSON.parse(raw || "[]"); } catch {}
+  msgs.push({ from: from || "?", text: text.slice(0, 400), ts: Date.now() });
+  if (msgs.length > 30) msgs = msgs.slice(-30);
+  await redis(["SET", key, JSON.stringify(msgs)]);
+  await redis(["EXPIRE", key, 60 * 60 * 24 * 30]);
 }
 
 import { welcomeText } from "./_welcome.js";
@@ -81,7 +103,12 @@ export default async function handler(req, res) {
         await tg("sendMessage", { chat_id: chat.id, text: welcomeText(), disable_web_page_preview: true });
         return res.status(200).json({ ok: true });
       }
-      if (chat.type !== "private") { await registerChat(chat); await touchActivity(chat.id); }
+      if (chat.type !== "private") {
+        await registerChat(chat);
+        await touchActivity(chat.id);
+        const from = msg.from ? (msg.from.username || msg.from.first_name || "?") : "?";
+        await storeMessage(chat.id, from, text || msg.caption || "");
+      }
       return res.status(200).json({ ok: true });
     }
     return res.status(200).json({ ok: true });

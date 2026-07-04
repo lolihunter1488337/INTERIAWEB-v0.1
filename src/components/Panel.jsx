@@ -394,6 +394,7 @@ function ArtistBoard() {
   const [filter, setFilter] = useState(null);
   const [open, setOpen] = useState(null);
   const [sent, setSent] = useState({});
+  const [aiLoading, setAiLoading] = useState({});
   const sendWelcome = (a) => {
     if (!a.tgChatId) return;
     fetch("/api/tg-send", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ chatId: a.tgChatId }) })
@@ -494,7 +495,7 @@ function ArtistBoard() {
                     {a.chat && <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer" className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">чат ↗</a>}
                     {a.tgChatId && <button onClick={() => sendWelcome(a)} className={"rounded-md border px-3 py-1.5 text-xs transition " + (sent[a.tgChatId] ? "border-green-500/40 text-green-400" : "border-white/15 text-white/70 hover:bg-white/5")}>{sent[a.tgChatId] ? "✓ отправлено" : "✉ Отправить приветствие"}</button>}
                   </div>
-                  <input value={a.note} onChange={(e) => setA(i, { note: e.target.value })} placeholder="заметка" className={inp + " mb-3 w-full"} />
+                  <textarea value={a.note} onChange={(e) => setA(i, { note: e.target.value })} placeholder="заметка (авто-обновляется от AI)" rows={2} className={inp + " mb-3 w-full resize-none leading-snug"} />
                   <div className="overflow-x-auto rounded-lg border border-white/10">
                     <table className="w-full border-collapse text-sm">
                       <thead><tr>
@@ -519,7 +520,24 @@ function ArtistBoard() {
                     </table>
                   </div>
                   <button onClick={() => addT(i)} className="mt-2 rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">+ трек</button>
-                  <div className="mt-3 text-[11px] text-white/25">Здесь появится 🧠 AI-сводка чата — с ботом (Фаза D).</div>
+                  {a.tgChatId && (
+                    <button disabled={!!aiLoading[a.tgChatId]} onClick={() => {
+                      setAiLoading(s => ({ ...s, [a.tgChatId]: true }));
+                      fetch("/api/ai-summary", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify({ tgChatId: a.tgChatId }) })
+                        .then(r => r.json())
+                        .then(j => {
+                          setAiLoading(s => { const n = { ...s }; delete n[a.tgChatId]; return n; });
+                          if (j.ok && j.summary) {
+                            setA(i, { note: "🧠 " + new Date().toLocaleDateString("ru-RU") + ": " + j.summary });
+                          } else {
+                            alert("Ошибка: " + (j.error || "?"));
+                          }
+                        })
+                        .catch(() => { setAiLoading(s => { const n = { ...s }; delete n[a.tgChatId]; return n; }); alert("Ошибка сети"); });
+                    }} className={"mt-3 rounded-md border px-3 py-1.5 text-xs transition " + (aiLoading[a.tgChatId] ? "border-white/10 text-white/30 cursor-wait" : "border-white/15 text-white/70 hover:bg-white/5")}>
+                      {aiLoading[a.tgChatId] ? "⏳ Генерирую сводку…" : "🧠 Обновить AI-сводку"}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -546,8 +564,15 @@ function DashCard({ title, tag, items }) {
 }
 
 function Dashboard() {
+  const groqExpiry = new Date("2025-01-01");
+  const daysLeft = Math.ceil((new Date("2026-01-01") - new Date()) / 86400000);
   return (
     <div className="space-y-4">
+      {daysLeft <= 60 && (
+        <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">
+          ⚠️ Groq API ключ истекает 1 января 2027 — осталось {daysLeft} дн. Зайди на <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="underline">console.groq.com</a> и создай новый ключ → обнови в Vercel → Settings → Environment Variables → GROQ_API_KEY.
+        </div>
+      )}
       <div className="rounded-xl border border-white/10 bg-white/[.03] p-4">
         <div className="text-[11px] uppercase tracking-wider text-white/40">Курс</div>
         <p className="mt-2 text-lg font-semibold text-white">Строим операционную систему лейбла (Label OS), а не просто CRM.</p>
