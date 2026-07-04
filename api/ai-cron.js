@@ -29,7 +29,7 @@ async function summarize(msgs) {
 
 async function detectIntent(msgs) {
   if (!msgs || msgs.length < 2) return null;
-  const dialog = msgs.slice(-15).map(m => m.from + ": " + m.text).join("\n").slice(0, 2000);
+  const dialog = msgs.slice(-60).map(m => m.from + ": " + m.text).join("\n").slice(0, 2000);
   const system = [
     "Ты анализируешь переписку артиста с музыкальным лейблом.",
     "Определи намерение артиста относительно новых релизов.",

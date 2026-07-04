@@ -53,7 +53,7 @@ async function touchActivity(chatId) {
   if (a) { a.last = today(); await kvSet("interia:artists", artists); }
 }
 
-// сохраняем последние 30 сообщений чата для AI-сводки
+// сохраняем последние 100 сообщений чата для AI-сводки
 async function storeMessage(chatId, from, text) {
   if (!text || !text.trim()) return;
   const key = "interia:msgs:" + chatId;
@@ -61,9 +61,9 @@ async function storeMessage(chatId, from, text) {
   let msgs = [];
   try { msgs = JSON.parse(raw || "[]"); } catch {}
   msgs.push({ from: from || "?", text: text.slice(0, 400), ts: Date.now() });
-  if (msgs.length > 30) msgs = msgs.slice(-30);
+  if (msgs.length > 100) msgs = msgs.slice(-100);
   await redis(["SET", key, JSON.stringify(msgs)]);
-  await redis(["EXPIRE", key, 60 * 60 * 24 * 30]);
+  await redis(["EXPIRE", key, 60 * 60 * 24 * 60]); // 60 дней
 }
 
 import { welcomeText } from "./_welcome.js";

@@ -46,7 +46,7 @@ function dataNote(a) {
 
 async function detectIntent(msgs) {
   if (!msgs || msgs.length < 2) return null;
-  const dialog = msgs.slice(-15).map(m => m.from + ": " + m.text).join("\n").slice(0, 2000);
+  const dialog = msgs.slice(-60).map(m => m.from + ": " + m.text).join("\n").slice(0, 2000);
   const system = "Ты анализируешь переписку артиста с музыкальным лейблом. Определи намерение артиста относительно новых релизов. Ответь ТОЛЬКО одним ключевым словом и через дефис краткое пояснение на русском (до 8 слов). Варианты: new_track (хочет/готов отгрузить новый трек), in_progress (дорабатывает, скоро будет), promised (назвал дату или срок), left (отказывается от сотрудничества), unknown (неясно). Пример: in_progress - финализирует микс, отгрузит на неделе";
   const raw = await groq(system, dialog);
   if (!raw) return null;
