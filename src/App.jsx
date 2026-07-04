@@ -19,6 +19,7 @@ import NowPlaying from "./components/NowPlaying.jsx";
 import SoundToggle from "./components/SoundToggle.jsx";
 import { playHover, playClick } from "./sound.js";
 import { I18nProvider, useI18n, LANGS } from "./i18n.jsx";
+import { ThemeProvider, useTheme } from "./theme.jsx";
 
 const POPULAR = ["INTERIA!", "11NZZiDENT", "ORXCOOL", "XISAGE", "ClxwnSlxps", "decaying", "HADES!", "NIKOTREN", "KALXSH", "WORTAX!", "LASTCHANCE!", "ZANKYO"];
 const ALL_ARTISTS = ["11NZZiDENT","svdst","DXWNFAME","ZXLXN","decaying","Ethereal Love","LXHXNTER","KXNO1X","Mwwlkiy","SAMUELCG","XISAGE","davxdminxnko","HERXHEIMER","ClxwnSlxps","INTERIA!","ORXCOOL","MXDSTER","BXRNCLUEL","Lutsern","KALXSH","Prblmsss","ZANKYO","MXTXL","BACD","14thesenses","30moll","nxofitov","heesolo","KerAE","DJF1STRIK","DJ QEWER","SX1ENT","RXPSODIYA","WORTAX!","LASTCHANCE!","NIKOTREN","Verious","MXPAL","KAZORO","SLXRDX","Minx","DJ WRZ","1DONE","w1rtyz","WINTERvision","HADES!","WXSP","SKYSET!","STRATIUM!"];
@@ -54,6 +55,24 @@ function Logo3D() {
       <div className="absolute inset-0 -z-10 rounded-full blur-3xl" style={{ background: "radial-gradient(circle,rgba(255,255,255,.20),transparent 62%)" }} />
       <Logo className="animate-float w-full object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,.65)]" />
     </motion.div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button onClick={toggle} aria-label="Переключить тему"
+      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-muted transition-colors hover:text-ink">
+      {theme === "dark" ? (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      )}
+    </button>
   );
 }
 
@@ -104,6 +123,7 @@ function Nav() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <LangSwitch />
           <MagneticButton href="#demo" className="btn-fill hidden rounded-full px-5 py-2 text-[13px] font-semibold sm:inline-flex">
             {t("nav.demo")}
@@ -490,7 +510,7 @@ function ScrollProgress() {
 }
 
 export default function App() {
-  return <I18nProvider><AppInner /></I18nProvider>;
+  return <ThemeProvider><I18nProvider><AppInner /></I18nProvider></ThemeProvider>;
 }
 
 function AppInner() {

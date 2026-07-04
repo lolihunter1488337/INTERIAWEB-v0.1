@@ -9,10 +9,10 @@ export default {
         serif: ["Space Grotesk", "sans-serif"],
       },
       colors: {
-        ink: "#fafafa",
-        muted: "#71717a",
-        faint: "#3f3f46",
-        bg: "#09090b",
+        ink:   "rgb(var(--color-ink)   / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
+        faint: "rgb(var(--color-faint) / <alpha-value>)",
+        bg:    "rgb(var(--color-bg)    / <alpha-value>)",
       },
       keyframes: {
         marquee: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
