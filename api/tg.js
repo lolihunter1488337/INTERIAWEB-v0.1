@@ -68,6 +68,66 @@ async function storeMessage(chatId, from, text) {
 
 import { welcomeText } from "./_welcome.js";
 
+const dsl = (s) => { if (!s) return null; const d = new Date(s); return isNaN(d) ? null : Math.floor((Date.now() - d) / 86400000); };
+function getAction(a) {
+  const ds = dsl(a.last);
+  const tr = Array.isArray(a.tracks) ? a.tracks : [];
+  if (a.intent && a.intent.type === "left") return { lvl: "red",    txt: "🚫 Сигнал об уходе — срочно поговорить" };
+  if (!a.docs)                              return { lvl: "red",    txt: "📄 Запросить форму документов" };
+  const noForm  = tr.find(t => !t.released && !t.form);
+  if (noForm)                               return { lvl: "red",    txt: "📝 Напомнить заполнить форму трека" };
+  const noCover = tr.find(t => !t.released && t.form && !t.cover);
+  if (noCover)                              return { lvl: "red",    txt: "🎨 Запросить обложку: " + (noCover.title || "трек") };
+  const notShip = tr.find(t => t.cover && !t.shipped);
+  if (notShip)                              return { lvl: "blue",   txt: "🚀 Отгрузить на DSP: " + (notShip.title || "трек") };
+  if (ds !== null && ds >= 14)              return { lvl: "red",    txt: "🔴 Не отвечает " + ds + " дн. — написать" };
+  if (ds !== null && ds >= 7)              return { lvl: "yellow", txt: "🟡 Молчит " + ds + " дн. — написать" };
+  if (tr.length === 0)                      return { lvl: "yellow", txt: "🎵 Нет треков — запросить материал" };
+  if (tr.every(t => t.released))            return { lvl: "green",  txt: "✅ Все треки вышли" };
+  return                                           { lvl: "ok",     txt: "✔️ В процессе" };
+}
+const INTENT_LABEL = { new_track: "🎵 Хочет отгрузить трек", in_progress: "🔨 Дорабатывает трек", promised: "📅 Обещал дату", left: "🚫 Сигнализирует об уходе" };
+
+async function handleStatus(chatId, arg) {
+  const artists = (await kvGet("interia:artists")) || [];
+  const q = arg.toLowerCase().trim();
+  if (!q) {
+    // Показать топ-5 по приоритету
+    const ORDER = { red: 0, blue: 1, yellow: 2 };
+    const list = artists
+      .filter(a => a && a.artist)
+      .map(a => ({ a, act: getAction(a) }))
+      .filter(x => ORDER[x.act.lvl] !== undefined)
+      .sort((x, y) => (ORDER[x.act.lvl] ?? 3) - (ORDER[y.act.lvl] ?? 3))
+      .slice(0, 5);
+    if (list.length === 0) { await tg("sendMessage", { chat_id: chatId, text: "✅ Активных задач нет" }); return; }
+    const lines = ["⚡ Топ задач:"];
+    for (const { a, act } of list) lines.push("• " + a.artist + " — " + act.txt);
+    await tg("sendMessage", { chat_id: chatId, text: lines.join("\n"), disable_web_page_preview: true });
+    return;
+  }
+  // Найти артиста по имени (подстрока, без учёта регистра)
+  const found = artists.find(a => a && a.artist && a.artist.toLowerCase().includes(q));
+  if (!found) { await tg("sendMessage", { chat_id: chatId, text: "❓ Артист не найден: " + arg }); return; }
+  const act = getAction(found);
+  const tr = Array.isArray(found.tracks) ? found.tracks : [];
+  const lines = ["📋 " + found.artist];
+  lines.push("Статус: " + act.txt);
+  if (found.intent && found.intent.type && found.intent.type !== "unknown") {
+    const lbl = INTENT_LABEL[found.intent.type] || found.intent.type;
+    lines.push("Намерение: " + lbl + (found.intent.detail ? " — " + found.intent.detail : ""));
+  }
+  if (tr.length > 0) {
+    const released = tr.filter(t => t.released).length;
+    lines.push("Треки: " + released + "/" + tr.length + " вышли");
+    const active = tr.filter(t => !t.released);
+    if (active.length > 0) lines.push("В работе: " + active.map(t => t.title || "без назв.").join(", "));
+  }
+  if (found.last) { const ds = dsl(found.last); if (ds !== null) lines.push("Последний контакт: " + ds + " дн. назад"); }
+  if (found.chat) lines.push(found.chat);
+  await tg("sendMessage", { chat_id: chatId, text: lines.join("\n"), disable_web_page_preview: true });
+}
+
 async function ensureArtist(chat, name) {
   const artists = (await kvGet("interia:artists")) || [];
   if (artists.find((x) => x && x.tgChatId === chat.id)) return;
@@ -94,6 +154,12 @@ export default async function handler(req, res) {
       if (text.startsWith("/digesthere")) {
         await kvSet("interia:digest_chat", chat.id);
         await tg("sendMessage", { chat_id: chat.id, text: "✅ Дайджест INTERIA будет приходить сюда каждое утро в 6:00 МСК." });
+        return res.status(200).json({ ok: true });
+      }
+      // /status — только в командном/нехудожническом чате
+      if (text.startsWith("/status") && !parseArtist(chat.title)) {
+        const arg = text.replace(/^\/status(@\w+)?/i, "").trim();
+        await handleStatus(chat.id, arg);
         return res.status(200).json({ ok: true });
       }
       if (text.startsWith("/artist") && chat.type !== "private") {
