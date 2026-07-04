@@ -469,43 +469,46 @@ function ArtistBoard() {
     .map((a, i) => ({ a, i, act: getAction(a) }))
     .filter(({ act }) => ["red", "blue", "yellow"].includes(act.lvl))
     .sort((x, y) => { const o = { red: 0, blue: 1, yellow: 2 }; return (o[x.act.lvl] ?? 3) - (o[y.act.lvl] ?? 3); });
+  const [urgentOpen, setUrgentOpen] = useState(false);
 
   return (
     <div>
-      {/* ⚡ НУЖНО СДЕЛАТЬ — главный экран */}
-      {urgentList.length === 0
-        ? <div className="mb-4 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 text-sm text-green-400">✅ Активных задач нет — все артисты в порядке</div>
-        : (
-          <div className="mb-4 rounded-xl border border-white/10 bg-black/50 p-3">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-white/60">⚡ Нужно сделать</span>
-              {urgentList.filter(x => x.act.lvl === "red").length > 0 && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[11px] font-bold text-red-400">● {urgentList.filter(x => x.act.lvl === "red").length} срочно</span>}
-              {urgentList.filter(x => x.act.lvl === "blue").length > 0 && <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-400">▶ {urgentList.filter(x => x.act.lvl === "blue").length} отгрузить</span>}
-              {urgentList.filter(x => x.act.lvl === "yellow").length > 0 && <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-[11px] text-yellow-400">◑ {urgentList.filter(x => x.act.lvl === "yellow").length} молчат</span>}
-            </div>
-            <div className="divide-y divide-white/[.04]">
-              {urgentList.slice(0, 12).map(({ a, i, act }) => (
-                <div key={i} className="flex cursor-pointer items-center gap-3 rounded px-1 py-1.5 hover:bg-white/[.04]"
-                  onClick={() => { setFilter(null); setOpen(i); }}>
-                  <span className={"shrink-0 text-sm " + (act.lvl === "red" ? "text-red-400" : act.lvl === "blue" ? "text-blue-400" : "text-yellow-400")}>
-                    {act.lvl === "red" ? "●" : act.lvl === "blue" ? "▶" : "◑"}
-                  </span>
-                  <span className="w-28 shrink-0 truncate text-sm font-medium text-white">{a.artist || "—"}</span>
-                  <span className="text-xs text-white/50">{act.txt}</span>
-                  {a.chat && (
-                    <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer"
-                      onClick={e => e.stopPropagation()}
-                      className="ml-auto shrink-0 rounded border border-blue-500/30 px-2 py-0.5 text-[11px] text-blue-400 hover:bg-blue-500/10">
-                      чат →
-                    </a>
-                  )}
-                </div>
-              ))}
-              {urgentList.length > 12 && <div className="pt-2 text-center text-xs text-white/30">ещё {urgentList.length - 12} артистов…</div>}
-            </div>
+      {/* ⚡ НУЖНО СДЕЛАТЬ — закрыто по умолчанию */}
+      <div className="mb-4 rounded-xl border border-white/10 bg-black/50">
+        <button
+          onClick={() => setUrgentOpen(o => !o)}
+          className="flex w-full flex-wrap items-center gap-2 p-3 text-left"
+        >
+          <span className="text-xs font-semibold uppercase tracking-wider text-white/60">⚡ Нужно сделать</span>
+          {urgentList.filter(x => x.act.lvl === "red").length > 0 && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[11px] font-bold text-red-400">● {urgentList.filter(x => x.act.lvl === "red").length} срочно</span>}
+          {urgentList.filter(x => x.act.lvl === "blue").length > 0 && <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-400">▶ {urgentList.filter(x => x.act.lvl === "blue").length} отгрузить</span>}
+          {urgentList.filter(x => x.act.lvl === "yellow").length > 0 && <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-[11px] text-yellow-400">◑ {urgentList.filter(x => x.act.lvl === "yellow").length} молчат</span>}
+          {urgentList.length === 0 && <span className="text-[11px] text-green-400">✅ всё в порядке</span>}
+          <span className="ml-auto text-xs text-white/30">{urgentOpen ? "▲ скрыть" : "▼ раскрыть"}</span>
+        </button>
+        {urgentOpen && urgentList.length > 0 && (
+          <div className="divide-y divide-white/[.04] border-t border-white/[.06] px-3 pb-2">
+            {urgentList.slice(0, 12).map(({ a, i, act }) => (
+              <div key={i} className="flex cursor-pointer items-center gap-3 rounded px-1 py-1.5 hover:bg-white/[.04]"
+                onClick={() => { setFilter(null); setOpen(i); }}>
+                <span className={"shrink-0 text-sm " + (act.lvl === "red" ? "text-red-400" : act.lvl === "blue" ? "text-blue-400" : "text-yellow-400")}>
+                  {act.lvl === "red" ? "●" : act.lvl === "blue" ? "▶" : "◑"}
+                </span>
+                <span className="w-28 shrink-0 truncate text-sm font-medium text-white">{a.artist || "—"}</span>
+                <span className="text-xs text-white/50">{act.txt}</span>
+                {a.chat && (
+                  <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="ml-auto shrink-0 rounded border border-blue-500/30 px-2 py-0.5 text-[11px] text-blue-400 hover:bg-blue-500/10">
+                    чат →
+                  </a>
+                )}
+              </div>
+            ))}
+            {urgentList.length > 12 && <div className="pt-2 text-center text-xs text-white/30">ещё {urgentList.length - 12} артистов…</div>}
           </div>
-        )
-      }
+        )}
+      </div>
       <div className="mb-4 flex flex-wrap gap-2">
         {CONTROL.map(([k, label]) => (
           <button key={k} onClick={() => setFilter(filter === k ? null : k)}
