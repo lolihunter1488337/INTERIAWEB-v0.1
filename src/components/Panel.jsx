@@ -443,6 +443,28 @@ function ArtistBoard() {
 
       <div className="mb-3 flex items-center gap-2">
         <button onClick={addA} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">+ Артист</button>
+        <button onClick={() => {
+          const seen = new Map();
+          const deduped = [];
+          for (const a of list) {
+            const key = (a.artist || "").toLowerCase().trim();
+            if (!key) { deduped.push(a); continue; }
+            if (!seen.has(key)) { seen.set(key, deduped.length); deduped.push(a); }
+            else {
+              // оставляем того у кого больше треков / данных
+              const prev = deduped[seen.get(key)];
+              if ((a.tracks || []).length > (prev.tracks || []).length) deduped[seen.get(key)] = a;
+            }
+          }
+          if (deduped.length < list.length) {
+            setRows(deduped);
+            alert("Убрано дублей: " + (list.length - deduped.length));
+          } else {
+            alert("Дублей не найдено");
+          }
+        }} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 hover:bg-white/5">
+          Убрать дубли
+        </button>
         <span className="ml-auto text-xs text-white/30">{indexed.length}{filter ? " / " + list.length : ""} артистов</span>
       </div>
 
