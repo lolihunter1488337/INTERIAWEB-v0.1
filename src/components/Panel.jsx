@@ -495,7 +495,14 @@ function ArtistBoard() {
                     {a.chat && <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer" className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5">чат ↗</a>}
                     {a.tgChatId && <button onClick={() => sendWelcome(a)} className={"rounded-md border px-3 py-1.5 text-xs transition " + (sent[a.tgChatId] ? "border-green-500/40 text-green-400" : "border-white/15 text-white/70 hover:bg-white/5")}>{sent[a.tgChatId] ? "✓ отправлено" : "✉ Отправить приветствие"}</button>}
                   </div>
-                  <textarea value={a.note} onChange={(e) => setA(i, { note: e.target.value })} placeholder="заметка (авто-обновляется от AI)" rows={2} className={inp + " mb-3 w-full resize-none leading-snug"} />
+                  <textarea
+                    value={a.note}
+                    onChange={(e) => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; setA(i, { note: e.target.value }); }}
+                    ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = Math.max(el.scrollHeight, 56) + "px"; } }}
+                    placeholder="заметка (авто-обновляется от AI в 5:00 МСК)"
+                    rows={1}
+                    className={inp + " mb-3 w-full resize-none leading-relaxed overflow-hidden"}
+                  />
                   <div className="overflow-x-auto rounded-lg border border-white/10">
                     <table className="w-full border-collapse text-sm">
                       <thead><tr>
