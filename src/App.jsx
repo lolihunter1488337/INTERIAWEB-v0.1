@@ -212,21 +212,11 @@ function ArtistStrip() {
 
 function Manifesto() {
   const { t } = useI18n();
-  const values = [0, 1, 2].map((i) => ({ t: t(`val.${i}.t`), d: t(`val.${i}.d`) }));
   return (
     <section id="about" className="relative mx-auto max-w-5xl px-5 py-28 md:px-8 md:py-40">
       <Reveal><Tag n="01">{t("manifesto.tag")}</Tag></Reveal>
       <ScrollText className="mt-8 text-[clamp(26px,4.6vw,60px)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink"
         text={t("manifesto.text")} />
-      <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.06] sm:grid-cols-3">
-        {values.map((v, i) => (
-          <div key={i} className="bg-bg p-7">
-            <div className="label label-dim">0{i + 1}</div>
-            <div className="mt-5 text-2xl font-semibold tracking-tight">{v.t}</div>
-            <p className="mt-1.5 text-[15px] text-muted">{v.d}</p>
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
