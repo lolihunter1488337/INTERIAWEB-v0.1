@@ -383,6 +383,32 @@ const ready_dsp = (t) => t.form && t.cover && !t.shipped;
 const need_pitch = (t) => t.shipped && !t.pitch;
 const rel_week = (t) => t.released && thisWeek(t.date);
 
+// Авто-вычисляет КОНКРЕТНОЕ следующее действие для менеджера
+function getAction(a) {
+  const ds = dslA(a.last);
+  const tracks = Array.isArray(a.tracks) ? a.tracks : [];
+  if (!a.docs)
+    return { lvl: "red",    txt: "Запросить форму документов" };
+  const noForm = tracks.find(t => !t.released && !t.form);
+  if (noForm)
+    return { lvl: "red",    txt: "Напомнить заполнить форму трека" };
+  const noCover = tracks.find(t => !t.released && t.form && !t.cover);
+  if (noCover)
+    return { lvl: "red",    txt: `Запросить обложку: «${noCover.title || "трек"}»` };
+  const notShip = tracks.find(t => t.cover && !t.shipped);
+  if (notShip)
+    return { lvl: "blue",   txt: `Отгрузить на DSP: «${notShip.title || "трек"}»` };
+  if (ds !== null && ds >= 14)
+    return { lvl: "red",    txt: `Не отвечает ${ds} дн. — срочно написать` };
+  if (ds !== null && ds >= 7)
+    return { lvl: "yellow", txt: `Молчит ${ds} дн. — написать в чат` };
+  if (tracks.length === 0)
+    return { lvl: "yellow", txt: "Нет треков — запросить материал" };
+  if (tracks.every(t => t.released))
+    return { lvl: "green",  txt: "Все треки вышли — планировать следующий" };
+  return           { lvl: "ok",    txt: "В процессе" };
+}
+
 const CONTROL = [
   ["attention", "🔴 Требуют внимания"], ["overdue", "🟡 Просрочено"], ["ready", "🟢 Готово к DSP"],
   ["docs", "📄 Ждут документы"], ["cover", "🎨 Ждут обложку"], ["pitch", "📝 Ждут питч"], ["week", "🎵 Релизы недели"],
@@ -411,10 +437,10 @@ function ArtistBoard() {
   const updT = (i, ti, patch) => setTracks(i, list[i].tracks.map((t, idx) => (idx === ti ? { ...t, ...patch } : t)));
   const delT = (i, ti) => setTracks(i, list[i].tracks.filter((_, idx) => idx !== ti));
 
-  const overdue = (a) => { const d = dslA(a.last); return d != null && d >= 5 && (!a.docs || a.tracks.some(need_pitch)); };
   const preds = {
-    attention: (a) => a.tracks.some((t) => need_cover(t) || ready_dsp(t)),
-    overdue, ready: (a) => a.tracks.some(ready_dsp), docs: (a) => !a.docs,
+    attention: (a) => getAction(a).lvl === "red",
+    overdue:   (a) => getAction(a).lvl === "yellow",
+    ready: (a) => a.tracks.some(ready_dsp), docs: (a) => !a.docs,
     cover: (a) => a.tracks.some(need_cover), pitch: (a) => a.tracks.some(need_pitch), week: (a) => a.tracks.some(rel_week),
   };
   const counts = Object.fromEntries(CONTROL.map(([k]) => [k, list.filter(preds[k]).length]));
@@ -430,8 +456,48 @@ function ArtistBoard() {
     return { shipped, cur, st };
   };
 
+  // Срочный список: что делать прямо сейчас
+  const urgentList = list
+    .map((a, i) => ({ a, i, act: getAction(a) }))
+    .filter(({ act }) => ["red", "blue", "yellow"].includes(act.lvl))
+    .sort((x, y) => { const o = { red: 0, blue: 1, yellow: 2 }; return (o[x.act.lvl] ?? 3) - (o[y.act.lvl] ?? 3); });
+
   return (
     <div>
+      {/* ⚡ НУЖНО СДЕЛАТЬ — главный экран */}
+      {urgentList.length === 0
+        ? <div className="mb-4 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3 text-sm text-green-400">✅ Активных задач нет — все артисты в порядке</div>
+        : (
+          <div className="mb-4 rounded-xl border border-white/10 bg-black/50 p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white/60">⚡ Нужно сделать</span>
+              {urgentList.filter(x => x.act.lvl === "red").length > 0 && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[11px] font-bold text-red-400">● {urgentList.filter(x => x.act.lvl === "red").length} срочно</span>}
+              {urgentList.filter(x => x.act.lvl === "blue").length > 0 && <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-400">▶ {urgentList.filter(x => x.act.lvl === "blue").length} отгрузить</span>}
+              {urgentList.filter(x => x.act.lvl === "yellow").length > 0 && <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-[11px] text-yellow-400">◑ {urgentList.filter(x => x.act.lvl === "yellow").length} молчат</span>}
+            </div>
+            <div className="divide-y divide-white/[.04]">
+              {urgentList.slice(0, 12).map(({ a, i, act }) => (
+                <div key={i} className="flex cursor-pointer items-center gap-3 rounded px-1 py-1.5 hover:bg-white/[.04]"
+                  onClick={() => { setFilter(null); setOpen(i); }}>
+                  <span className={"shrink-0 text-sm " + (act.lvl === "red" ? "text-red-400" : act.lvl === "blue" ? "text-blue-400" : "text-yellow-400")}>
+                    {act.lvl === "red" ? "●" : act.lvl === "blue" ? "▶" : "◑"}
+                  </span>
+                  <span className="w-28 shrink-0 truncate text-sm font-medium text-white">{a.artist || "—"}</span>
+                  <span className="text-xs text-white/50">{act.txt}</span>
+                  {a.chat && (
+                    <a href={/^https?:\/\//.test(a.chat) ? a.chat : "https://" + a.chat} target="_blank" rel="noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      className="ml-auto shrink-0 rounded border border-blue-500/30 px-2 py-0.5 text-[11px] text-blue-400 hover:bg-blue-500/10">
+                      чат →
+                    </a>
+                  )}
+                </div>
+              ))}
+              {urgentList.length > 12 && <div className="pt-2 text-center text-xs text-white/30">ещё {urgentList.length - 12} артистов…</div>}
+            </div>
+          </div>
+        )
+      }
       <div className="mb-4 flex flex-wrap gap-2">
         {CONTROL.map(([k, label]) => (
           <button key={k} onClick={() => setFilter(filter === k ? null : k)}
@@ -479,8 +545,12 @@ function ArtistBoard() {
                 <input value={a.artist} onChange={(e) => setA(i, { artist: e.target.value })} placeholder="Артист" className={inp + " w-40"} />
                 <span className="flex items-center gap-1.5 text-xs text-white/50">📄 <Chk on={a.docs} onClick={() => setA(i, { docs: !a.docs })} /></span>
                 <span className="text-xs text-white/50">отгружено <b className="text-white">{s.shipped}</b></span>
-                {s.cur ? <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-white/70">{s.cur.title || "трек"} · {s.st}</span> : <span className="text-[11px] text-white/30">нет активных треков</span>}
-                {ds != null && <span className={"text-[11px] " + (silent ? "text-red-400" : "text-white/40")}>{ds === 0 ? "сегодня" : ds + " дн"}{silent ? " 🔴" : ""}</span>}
+                {(() => {
+                  const act = getAction(a);
+                  const cls = { red: "border-red-500/40 text-red-400", blue: "border-blue-500/40 text-blue-400", yellow: "border-yellow-500/40 text-yellow-300", green: "border-green-500/30 text-green-400", ok: "border-white/10 text-white/25" };
+                  return <span className={"rounded-full border px-2.5 py-0.5 text-[11px] " + (cls[act.lvl] || cls.ok)}>{act.txt}</span>;
+                })()}
+                {ds != null && <span className="text-[11px] text-white/30">{ds === 0 ? "сегодня" : ds + " дн"}</span>}
                 <div className="ml-auto flex items-center gap-1">
                   <button onClick={() => setOpen(isOpen ? null : i)} className="rounded-md border border-white/15 px-2.5 py-1 text-xs text-white/70 hover:bg-white/5">{isOpen ? "Свернуть" : "Открыть"}</button>
                   <button onClick={() => delA(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 hover:bg-red-500/15 hover:text-red-400">✕</button>
