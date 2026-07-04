@@ -443,7 +443,7 @@ function Demo() {
       <div className="relative z-10 mx-auto grid max-w-6xl gap-14 md:grid-cols-2 md:items-center">
         <Reveal>
           <Tag n="07">{t("demo.tag")}</Tag>
-          <h2 className="mt-5 text-[clamp(40px,7vw,84px)] font-bold leading-[.9] tracking-[-0.04em]">
+          <h2 className="mt-5 text-[clamp(40px,7vw,84px)] font-bold leading-[.9] tracking-[-0.02em]">
             {t("demo.title")}
           </h2>
           <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">{t("demo.lead")}</p>
