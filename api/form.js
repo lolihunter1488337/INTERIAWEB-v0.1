@@ -53,15 +53,16 @@ export default async function handler(req, res) {
   if (formType === "track") {
     const tracks = [...a.tracks];
     // ищем трек без form=true с совпадающим названием, или первый без form, или создаём новый
+    // обложка тоже в этой форме — сразу ставим form=true и cover=true
     let ti = title ? tracks.findIndex((t) => cmp(t.title) === cmp(title) && !t.form) : -1;
     if (ti < 0) ti = tracks.findIndex((t) => !t.form);
     if (ti >= 0) {
-      tracks[ti] = { ...tracks[ti], form: true, title: title || tracks[ti].title || "трек" };
+      tracks[ti] = { ...tracks[ti], form: true, cover: true, title: title || tracks[ti].title || "трек" };
     } else {
-      tracks.push({ title: title || "трек", form: true, cover: false, shipped: false, pitch: false, released: false, date: "" });
+      tracks.push({ title: title || "трек", form: true, cover: true, shipped: false, pitch: false, released: false, date: "" });
     }
     artists[idx] = { ...a, tracks };
-    note = "🎵 " + a.artist + " отправил трек-форму" + (title ? ": «" + title + "»" : "");
+    note = "🎵 " + a.artist + " отправил трек-форму + обложку" + (title ? ": «" + title + "»" : "");
   }
 
   if (formType === "pitch") {
