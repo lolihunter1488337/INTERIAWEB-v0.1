@@ -28,6 +28,22 @@ async function summarize(msgs) {
   return j?.choices?.[0]?.message?.content?.trim() || null;
 }
 
+
+async function detectIntent(msgs, groqFn) {
+  if (!msgs || msgs.length < 2) return null;
+  const dialog = msgs.slice(-15).map(m => m.from + ': ' + m.text).join('
+').slice(0, 2000);
+  const raw = await groqFn(
+    'Определи намерение артиста относительно новых релизов. Ответь ТОЛЬКО одним словом и через дефис краткое пояснение (до 8 слов): new_track / in_progress / promised / left / unknown',
+    dialog
+  );
+  if (!raw) return null;
+  const types = ['new_track','in_progress','promised','left','unknown'];
+  const found = types.find(t => raw.toLowerCase().startsWith(t));
+  if (!found || found === 'unknown') return null;
+  const detail = raw.includes(' - ') ? raw.split(' - ').slice(1).join(' - ').trim() : '';
+  return { type: found, detail, updatedAt: new Date().toISOString().slice(0, 10) };
+}
 export default async function handler(req, res) {
   const isVercelCron = req.headers["x-vercel-cron"] === "1";
   const cronSecret = process.env.CRON_SECRET;
@@ -53,6 +69,8 @@ export default async function handler(req, res) {
       const summary = await summarize(msgs);
       if (!summary) continue;
       artists[a._idx].note = "🧠 " + dateStr + ": " + summary;
+      const intent = await detectIntent(msgs, summarize);
+      if (intent) artists[a._idx].intent = intent;
       updated.push(a.artist);
     } catch { /* skip */ }
   }

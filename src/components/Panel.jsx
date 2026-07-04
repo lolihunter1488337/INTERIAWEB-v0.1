@@ -383,10 +383,18 @@ const ready_dsp = (t) => t.form && t.cover && !t.shipped;
 const need_pitch = (t) => t.shipped && !t.pitch;
 const rel_week = (t) => t.released && thisWeek(t.date);
 
+const INTENT_UI = {
+  new_track:   { icon: "🎵", label: "Хочет отгрузить трек",   cls: "border-green-500/30 text-green-400"   },
+  in_progress: { icon: "🔨", label: "Дорабатывает трек",      cls: "border-blue-500/30 text-blue-400"    },
+  promised:    { icon: "📅", label: "Обещал дату отгрузки",   cls: "border-yellow-500/30 text-yellow-300" },
+  left:        { icon: "🚫", label: "Сигнализирует об уходе", cls: "border-red-500/40 text-red-400"      },
+};
+
 // Авто-вычисляет КОНКРЕТНОЕ следующее действие для менеджера
 function getAction(a) {
   const ds = dslA(a.last);
   const tracks = Array.isArray(a.tracks) ? a.tracks : [];
+  if (a.intent?.type === "left") return { lvl: "red", txt: "🚫 Сигнал об уходе — срочно поговорить" };
   if (!a.docs)
     return { lvl: "red",    txt: "Запросить форму документов" };
   const noForm = tracks.find(t => !t.released && !t.form);
@@ -551,6 +559,12 @@ function ArtistBoard() {
                   return <span className={"rounded-full border px-2.5 py-0.5 text-[11px] " + (cls[act.lvl] || cls.ok)}>{act.txt}</span>;
                 })()}
                 {ds != null && <span className="text-[11px] text-white/30">{ds === 0 ? "сегодня" : ds + " дн"}</span>}
+                {a.intent && INTENT_UI[a.intent.type] && (
+                  <span className={"rounded-full border px-2.5 py-0.5 text-[11px] " + INTENT_UI[a.intent.type].cls}
+                    title={"Обновлено: " + (a.intent.updatedAt || "—")}>
+                    {INTENT_UI[a.intent.type].icon} {a.intent.detail || INTENT_UI[a.intent.type].label}
+                  </span>
+                )}
                 <div className="ml-auto flex items-center gap-1">
                   <button onClick={() => setOpen(isOpen ? null : i)} className="rounded-md border border-white/15 px-2.5 py-1 text-xs text-white/70 hover:bg-white/5">{isOpen ? "Свернуть" : "Открыть"}</button>
                   <button onClick={() => delA(i)} className="grid h-7 w-7 place-items-center rounded-md text-white/30 hover:bg-red-500/15 hover:text-red-400">✕</button>
@@ -944,6 +958,7 @@ export default function Panel() {
   const [userName, setUserName] = useState(() => sessionStorage.getItem("interia_panel_name") || "");
   const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); setOk(false); setPw(""); setUserName(""); };
   const [tab, setTab] = useState(() => { try { return localStorage.getItem("interia_panel_tab") || "today"; } catch { return "today"; } });
+  const [navOpen, setNavOpen] = useState(true);
   useEffect(() => { try { localStorage.setItem("interia_panel_tab", tab); } catch (e) {} }, [tab]);
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
@@ -997,11 +1012,28 @@ export default function Panel() {
           </div>
         </div>
 
-        <div className="mb-5 flex flex-wrap gap-2">
-          {[["today", "🏠 Сегодня"], ["artists", "🎛 Пульт артистов"], ["dashboard", "Дашборд"], ["releases", "Релизы"], ["tasks", "Задачи"], ["tasks_ar", "Задачи A&R"], ["social", "📣 Соцсети"], ["search", "🔎 Поиск артистов"], ["bible", "📚 База знаний"]].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
-          ))}
-        </div>
+        {/* Навигация — закрываемая */}
+        {(() => {
+          const TABS = [["today","🏠 Сегодня"],["artists","🎛 Пульт артистов"],["dashboard","Дашборд"],["releases","Релизы"],["tasks","Задачи"],["tasks_ar","Задачи A&R"],["social","📣 Соцсети"],["search","🔎 Поиск артистов"],["bible","📚 База знаний"]];
+          const activeLabel = TABS.find(([id]) => id === tab)?.[1] || tab;
+          return (
+            <div className="mb-5">
+              {navOpen ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {TABS.map(([id, label]) => (
+                    <button key={id} onClick={() => setTab(id)} className={"rounded-full px-4 py-2 text-sm " + (tab === id ? "bg-white font-semibold text-black" : "border border-white/15 text-white/70 hover:bg-white/5")}>{label}</button>
+                  ))}
+                  <button onClick={() => setNavOpen(false)} className="ml-auto rounded-full border border-white/10 px-3 py-2 text-xs text-white/30 hover:bg-white/5 hover:text-white/70" title="Скрыть меню">✕</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setNavOpen(true)} className="rounded-full border border-white/15 px-3 py-2 text-sm text-white/70 hover:bg-white/5">☰</button>
+                  <span className="text-sm text-white/50">{activeLabel}</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {tab === "today" ? <Today go={setTab} />
           : tab === "artists" ? <ArtistBoard />

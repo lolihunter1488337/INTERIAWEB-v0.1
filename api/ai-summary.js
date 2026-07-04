@@ -29,6 +29,28 @@ async function groq(systemPrompt, userContent) {
   return j?.choices?.[0]?.message?.content?.trim() || null;
 }
 
+
+async function detectIntent(msgs) {
+  if (!msgs || msgs.length < 2) return null;
+  const dialog = msgs.slice(-15).map(m => m.from + ': ' + m.text).join('
+').slice(0, 2000);
+  const raw = await groq(
+    'Ты анализируешь переписку артиста с музыкальным лейблом. Определи намерение артиста относительно новых релизов. Ответь ТОЛЬКО одним из ключевых слов и добавь через дефис краткое пояснение на русском (до 8 слов):
+- new_track — хочет/готов отгрузить новый трек
+- in_progress — дорабатывает трек, скоро будет готов
+- promised — назвал конкретную дату или срок
+- left — отказывается от сотрудничества, хочет уйти
+- unknown — неясно или не обсуждалось
+Пример ответа: in_progress - финализирует микс, отгрузит на неделе',
+    dialog
+  );
+  if (!raw) return null;
+  const types = ['new_track','in_progress','promised','left','unknown'];
+  const found = types.find(t => raw.toLowerCase().startsWith(t));
+  if (!found || found === 'unknown') return null;
+  const detail = raw.includes(' - ') ? raw.split(' - ').slice(1).join(' - ').trim() : '';
+  return { type: found, detail, updatedAt: new Date().toISOString().slice(0, 10) };
+}
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") return res.status(405).json({ ok: false });
@@ -84,10 +106,14 @@ export default async function handler(req, res) {
 
   if (!summary) return res.status(502).json({ ok: false, error: "Groq не ответил" });
 
-  // сохраняем в note
+  // сохраняем note и intent
   const prefix = msgs.length > 0 ? "🧠" : "📊";
   artists[idx].note = prefix + " " + new Date().toLocaleDateString("ru-RU") + ": " + summary;
+  if (msgs.length > 0) {
+    const intent = await detectIntent(msgs);
+    if (intent) artists[idx].intent = intent;
+  }
   await kv(["SET", "interia:artists", JSON.stringify(artists)]);
 
-  return res.status(200).json({ ok: true, summary, source: msgs.length > 0 ? "chat" : "data" });
+  return res.status(200).json({ ok: true, summary, intent: artists[idx].intent || null, source: msgs.length > 0 ? "chat" : "data" });
 }
