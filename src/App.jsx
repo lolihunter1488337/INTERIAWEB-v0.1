@@ -145,8 +145,7 @@ function Hero() {
 
   return (
     <section id="top" ref={ref} className="relative flex min-h-screen flex-col justify-center overflow-hidden px-5 pb-24 pt-32 md:px-8">
-      <div className="pointer-events-none absolute inset-x-5 top-24 z-10 flex items-center justify-between md:inset-x-8">
-        <span className="label text-muted">{t("hero.badge")}</span>
+      <div className="pointer-events-none absolute inset-x-5 top-24 z-10 flex items-center justify-end md:inset-x-8">
         <span className="label flex items-center gap-2 text-muted"><Cross /> EST. 2026</span>
       </div>
 
