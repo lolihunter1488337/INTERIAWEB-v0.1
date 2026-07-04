@@ -476,10 +476,6 @@ function ArtistBoard() {
             <div key={i} className="rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm">
               <div className="flex flex-wrap items-center gap-2 p-2.5">
                 <input value={a.artist} onChange={(e) => setA(i, { artist: e.target.value })} placeholder="Артист" className={inp + " w-40"} />
-                <select value={a.owner} onChange={(e) => setA(i, { owner: e.target.value })} className={inp + " w-32"}>
-                  <option value="" className="bg-zinc-900">— кто ведёт —</option>
-                  {PEOPLE.map((p) => <option key={p} value={p} className="bg-zinc-900">{p}</option>)}
-                </select>
                 <span className="flex items-center gap-1.5 text-xs text-white/50">📄 <Chk on={a.docs} onClick={() => setA(i, { docs: !a.docs })} /></span>
                 <span className="text-xs text-white/50">отгружено <b className="text-white">{s.shipped}</b></span>
                 {s.cur ? <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-white/70">{s.cur.title || "трек"} · {s.st}</span> : <span className="text-[11px] text-white/30">нет активных треков</span>}
