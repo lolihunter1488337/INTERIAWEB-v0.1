@@ -259,11 +259,11 @@ function ReleasesSection() {
 
 function Offer() {
   const { t } = useI18n();
-  const offers = [0, 1, 2].map((i) => ({ n: "0" + (i + 1), title: t(`offer.${i}.title`), text: t(`offer.${i}.text`) }));
+  const offers = [0, 1, 2, 3].map((i) => ({ n: "0" + (i + 1), title: t(`offer.${i}.title`), text: t(`offer.${i}.text`) }));
   return (
     <Section id="offer" n="03" tag={t("offer.tag")} title={t("offer.title")} lead={t("offer.lead")}>
       <motion.div variants={container(0.1)} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-80px" }}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        className="grid gap-3 sm:grid-cols-2">
         {offers.map((o) => (
           <motion.div key={o.n} variants={fadeUp}>
             <SpotlightCard className="h-full p-6">
