@@ -1,5 +1,7 @@
-// AI-сводка чата артиста через Groq (llama-3)
-// POST { tgChatId } — читает последние сообщения из KV, спрашивает Groq, пишет в note артиста
+// AI-сводка артиста через Groq (llama-3)
+// POST { tgChatId }
+// Если есть сообщения чата — анализирует их.
+// Если нет — генерирует сводку по данным из панели (треки, документы, активность).
 import { authUser } from "./_users.js";
 const KVURL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const KVTOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -8,6 +10,23 @@ const GROQ  = process.env.GROQ_API_KEY;
 async function kv(cmd) {
   const r = await fetch(KVURL, { method: "POST", headers: { Authorization: "Bearer " + KVTOK, "Content-Type": "application/json" }, body: JSON.stringify(cmd) });
   return (await r.json()).result;
+}
+
+async function groq(systemPrompt, userContent) {
+  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + GROQ, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      max_tokens: 250,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: userContent  }
+      ]
+    })
+  });
+  const j = await r.json();
+  return j?.choices?.[0]?.message?.content?.trim() || null;
 }
 
 export default async function handler(req, res) {
@@ -23,41 +42,52 @@ export default async function handler(req, res) {
   const { tgChatId } = body || {};
   if (!tgChatId) return res.status(400).json({ ok: false, error: "нет tgChatId" });
 
-  // читаем сообщения
-  const raw = await kv(["GET", "interia:msgs:" + tgChatId]);
-  let msgs = [];
-  try { msgs = JSON.parse(raw || "[]"); } catch {}
-  if (!msgs.length) return res.status(200).json({ ok: false, error: "нет сообщений — пусть артист напишет в чат" });
-
-  // форматируем для Groq
-  const dialog = msgs.map(m => m.from + ": " + m.text).join("\n");
-
-  const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + GROQ, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      max_tokens: 200,
-      messages: [
-        { role: "system", content: "Ты помощник музыкального лейбла INTERIA!. Кратко резюмируй переписку с артистом: что обсуждалось, какой статус, что нужно сделать. Отвечай строго на русском, 2-3 предложения, без лишних слов." },
-        { role: "user", content: dialog }
-      ]
-    })
-  });
-
-  const gj = await groqRes.json();
-  const summary = gj?.choices?.[0]?.message?.content?.trim();
-  if (!summary) return res.status(502).json({ ok: false, error: "Groq не ответил" });
-
-  // пишем в note артиста
+  // читаем артиста
   const artistsRaw = await kv(["GET", "interia:artists"]);
   let artists = [];
   try { artists = JSON.parse(artistsRaw || "[]"); } catch {}
   const idx = artists.findIndex(a => String(a.tgChatId) === String(tgChatId));
-  if (idx >= 0) {
-    artists[idx].note = "🧠 " + new Date().toLocaleDateString("ru-RU") + ": " + summary;
-    await kv(["SET", "interia:artists", JSON.stringify(artists)]);
+  if (idx < 0) return res.status(404).json({ ok: false, error: "артист не найден" });
+  const a = artists[idx];
+
+  // читаем сообщения чата
+  const raw = await kv(["GET", "interia:msgs:" + tgChatId]);
+  let msgs = [];
+  try { msgs = JSON.parse(raw || "[]"); } catch {}
+
+  let summary = null;
+
+  if (msgs.length > 0) {
+    // === Режим 1: анализ чата ===
+    const dialog = msgs.map(m => m.from + ": " + m.text).join("\n").slice(0, 3000);
+    summary = await groq(
+      "Ты помощник музыкального лейбла INTERIA!. Кратко резюмируй переписку с артистом: что обсуждалось, какой статус, что нужно сделать лейблу. Отвечай строго на русском, 2-3 предложения, без лишних слов.",
+      dialog
+    );
+  } else {
+    // === Режим 2: fallback — сводка по данным панели ===
+    const tracks = Array.isArray(a.tracks) ? a.tracks : [];
+    const tInfo = tracks.length
+      ? tracks.map(t => {
+          const s = t.released ? "вышел" : t.shipped ? "отгружен, ждёт выхода" : t.cover ? "обложка есть, не отгружен" : t.form ? "форма подана, нет обложки" : "в работе";
+          return `«${t.title}» — ${s}`;
+        }).join("; ")
+      : "треков нет";
+    const docStr = a.docs ? "документы сданы" : "ДОКУМЕНТЫ НЕ СДАНЫ";
+    const lastStr = a.last ? `последняя активность: ${a.last}` : "";
+
+    summary = await groq(
+      "Ты помощник музыкального лейбла INTERIA!. На основе данных об артисте составь краткую сводку для менеджера: что уже сделано, что нужно сделать дальше. Отвечай строго на русском, 2-3 предложения, без лишних слов.",
+      `Артист: ${a.artist}. ${docStr}. Треки: ${tInfo}. ${lastStr}`
+    );
   }
 
-  return res.status(200).json({ ok: true, summary });
+  if (!summary) return res.status(502).json({ ok: false, error: "Groq не ответил" });
+
+  // сохраняем в note
+  const prefix = msgs.length > 0 ? "🧠" : "📊";
+  artists[idx].note = prefix + " " + new Date().toLocaleDateString("ru-RU") + ": " + summary;
+  await kv(["SET", "interia:artists", JSON.stringify(artists)]);
+
+  return res.status(200).json({ ok: true, summary, source: msgs.length > 0 ? "chat" : "data" });
 }
