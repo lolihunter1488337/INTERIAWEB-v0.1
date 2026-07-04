@@ -449,8 +449,8 @@ function Demo() {
           <p className="mt-5 max-w-sm text-[16px] leading-relaxed text-muted">{t("demo.lead")}</p>
           <div className="label mt-8 space-y-1.5 text-muted">
             <div className="text-ink">{t("demo.contact")}</div>
-            <div>interiarecordsru@gmail.com</div>
-            <div>@ceo_INTERIA</div>
+            <div><span className="text-muted/60 text-xs uppercase tracking-wider mr-2">email</span>interiarecordsru@gmail.com</div>
+            <div><span className="text-muted/60 text-xs uppercase tracking-wider mr-2">tg</span>@ceo_INTERIA</div>
           </div>
         </Reveal>
 
