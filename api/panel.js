@@ -5,10 +5,13 @@ const TOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKE
 const KEYS = { releases: "interia:releases", tasks: "interia:tasks", tasks_ar: "interia:tasks_ar", social_ig_done: "interia:social_ig_done", artists: "interia:artists" };
 import { authUser } from "./_users.js";
 const PANEL_PASSWORD = process.env.PANEL_PASSWORD; // мастер-пароль (опционально), помимо БД пользователей
+const userOf = (req) => authUser(req.headers["x-panel-key"] || "");
 const authed = (req) => {
   const key = req.headers["x-panel-key"] || "";
   return !!authUser(key) || (PANEL_PASSWORD && key === PANEL_PASSWORD);
 };
+// Роль A&R видит через API только свой трекер задач — остальные ключи запрещены на сервере.
+const AR_KEYS = new Set(["tasks_ar"]);
 
 async function redis(cmd) {
   const r = await fetch(URL, {
@@ -26,6 +29,9 @@ export default async function handler(req, res) {
   if (!URL || !TOK) return res.status(503).json({ ok: false, error: "storage not configured" });
   const key = KEYS[req.query.key];
   if (!key) return res.status(400).json({ ok: false, error: "bad key" });
+  // Ограничение по роли: A&R не имеет доступа к чужим складам (релизы/задачи/артисты/соцсети).
+  const u = userOf(req);
+  if (u && u.role === "ar" && !AR_KEYS.has(req.query.key)) return res.status(403).json({ ok: false, error: "forbidden" });
   try {
     if (req.method === "GET") {
       const v = await redis(["GET", key]);

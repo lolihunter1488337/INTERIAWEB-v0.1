@@ -959,10 +959,15 @@ export default function Panel() {
   const [login, setLogin] = useState("");
   const [authErr, setAuthErr] = useState("");
   const [userName, setUserName] = useState(() => sessionStorage.getItem("interia_panel_name") || "");
-  const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); setOk(false); setPw(""); setUserName(""); };
+  const [role, setRole] = useState(() => sessionStorage.getItem("interia_panel_role") || "full");
+  const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); sessionStorage.removeItem("interia_panel_role"); setOk(false); setPw(""); setUserName(""); setRole("full"); };
   const [tab, setTab] = useState(() => { try { return localStorage.getItem("interia_panel_tab") || "today"; } catch { return "today"; } });
   const [navOpen, setNavOpen] = useState(true);
   useEffect(() => { try { localStorage.setItem("interia_panel_tab", tab); } catch (e) {} }, [tab]);
+  // A&R не может оказаться на скрытой вкладке (напр. сохранённой в localStorage) — уводим на «Поиск артистов».
+  useEffect(() => {
+    if (role === "ar" && !["tasks_ar", "search", "bible"].includes(tab)) setTab("search");
+  }, [role, tab]);
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
   const [tasksAr, setTasksAr] = useShared("tasks_ar", []);
@@ -980,8 +985,9 @@ export default function Panel() {
                 if (j && j.ok) {
                   sessionStorage.setItem(PKEY, pw);
                   sessionStorage.setItem("interia_panel_name", j.name);
+                  sessionStorage.setItem("interia_panel_role", j.role || "full");
                   sessionStorage.setItem("interia_panel_ok", "1");
-                  setUserName(j.name); setOk(true);
+                  setUserName(j.name); setRole(j.role || "full"); setOk(true);
                 } else { setAuthErr((j && j.error) || "Неверный логин или пароль"); }
               })
               .catch(() => setAuthErr("Сеть недоступна"));
@@ -1017,7 +1023,10 @@ export default function Panel() {
 
         {/* Навигация — закрываемая */}
         {(() => {
-          const TABS = [["today","🏠 Сегодня"],["artists","🎛 Пульт артистов"],["dashboard","Дашборд"],["releases","Релизы"],["tasks","Задачи"],["tasks_ar","Задачи A&R"],["social","📣 Соцсети"],["search","🔎 Поиск артистов"],["bible","📚 База знаний"]];
+          const ALL_TABS = [["today","🏠 Сегодня"],["artists","🎛 Пульт артистов"],["dashboard","Дашборд"],["releases","Релизы"],["tasks","Задачи"],["tasks_ar","Задачи A&R"],["social","📣 Соцсети"],["search","🔎 Поиск артистов"],["bible","📚 База знаний"]];
+          // A&R видит только свои 3 вкладки.
+          const AR_ALLOWED = ["tasks_ar", "search", "bible"];
+          const TABS = role === "ar" ? ALL_TABS.filter(([id]) => AR_ALLOWED.includes(id)) : ALL_TABS;
           const activeLabel = TABS.find(([id]) => id === tab)?.[1] || tab;
           return (
             <div className="mb-5">

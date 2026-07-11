@@ -18,7 +18,7 @@ const DATA = {
   myreleases: {
     tag: "Кабинет артиста",
     title: "МОИ РЕЛИЗЫ",
-    sub: "Личный кабинет артиста: релизы, статистика, выплаты — скоро.",
+    sub: "",
     items: [
       { t: "Все релизы", s: "в одном месте" },
       { t: "Статистика", s: "стримы и слушатели" },
@@ -45,12 +45,26 @@ const DATA = {
 
 export default function ComingSoon({ variant }) {
   const d = DATA[variant] || DATA.merch;
+
+  // Мерч — минимальный экран: только «Скоро» + кнопка на главную.
+  if (variant === "merch") {
+    return (
+      <main className="relative mx-auto grid min-h-screen max-w-6xl place-items-center px-5 pb-24 pt-28 md:px-8">
+        <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}
+          className="glass max-w-sm rounded-3xl border-white/15 px-8 py-10 text-center backdrop-blur-xl">
+          <div className="chrome chrome-anim text-[clamp(40px,8vw,80px)] font-bold uppercase leading-none tracking-tighter">Скоро</div>
+          <a href="#/" className="btn-fill mt-7 inline-block rounded-full px-7 py-3.5 text-sm font-semibold">← На главную</a>
+        </motion.div>
+      </main>
+    );
+  }
+
   return (
     <main className="relative mx-auto min-h-screen max-w-6xl px-5 pb-24 pt-28 md:px-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="mb-10">
         <Tag n="//">{d.tag}</Tag>
         <h1 className="mt-4 text-[clamp(48px,12vw,150px)] font-bold uppercase leading-[.82] tracking-tighter">{d.title}</h1>
-        <p className="mt-4 max-w-md text-[16px] text-muted">{d.sub}</p>
+        {d.sub && <p className="mt-4 max-w-md text-[16px] text-muted">{d.sub}</p>}
       </motion.div>
 
       <div className="relative">

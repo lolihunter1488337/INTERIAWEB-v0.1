@@ -12,8 +12,8 @@ export const LANGS = [
 export const DICT = {
   ru: {
     "nav.releases": "Релизы", "nav.offer": "Условия", "nav.roster": "Артисты", "nav.merch": "Мерч",
-    "nav.collabs": "Коллабы", "nav.myreleases": "Мои релизы", "nav.faq": "FAQ", "nav.demo": "Прислать демо",
-    "hero.badge": "Независимый лейбл", "hero.demo": "Прислать демо →", "hero.listen": "Слушать релизы",
+    "nav.collabs": "Коллабы", "nav.myreleases": "Мои релизы", "nav.faq": "FAQ", "nav.demo": "Отправить демо",
+    "hero.badge": "Независимый лейбл", "hero.demo": "Отправить демо →", "hero.listen": "Каталог",
     "hero.s1": "% артисту", "hero.s2": "% лейблу", "hero.s3": "+ артистов",
     "manifesto.tag": "Манифест", "manifesto.text": "Мы создаём будущее музыки. Остальное — история.",
     "val.0.t": "Свобода", "val.0.d": "Без границ и рамок.",

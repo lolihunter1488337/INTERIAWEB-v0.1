@@ -9,5 +9,5 @@ export default function handler(req, res) {
   const { login, password } = body || {};
   const u = findByLogin(login || "", password || "");
   if (!u) return res.status(401).json({ ok: false, error: "Неверный логин или пароль" });
-  return res.json({ ok: true, name: u.name, login: u.login });
+  return res.json({ ok: true, name: u.name, login: u.login, role: u.role || "full" });
 }
