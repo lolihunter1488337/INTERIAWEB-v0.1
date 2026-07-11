@@ -961,6 +961,21 @@ export default function Panel() {
   const [userName, setUserName] = useState(() => sessionStorage.getItem("interia_panel_name") || "");
   const [role, setRole] = useState(() => sessionStorage.getItem("interia_panel_role") || "full");
   const logout = () => { sessionStorage.removeItem("interia_panel_ok"); sessionStorage.removeItem(PKEY); sessionStorage.removeItem("interia_panel_name"); sessionStorage.removeItem("interia_panel_role"); setOk(false); setPw(""); setUserName(""); setRole("full"); };
+  // Уже залогиненные (роль ещё не сохранена или изменилась) — подтягиваем актуальную роль с сервера.
+  useEffect(() => {
+    if (sessionStorage.getItem("interia_panel_ok") !== "1") return;
+    fetch("/api/auth", { headers: { "x-panel-key": sessionStorage.getItem(PKEY) || "" } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j && j.ok) {
+          const rl = j.role || "full";
+          sessionStorage.setItem("interia_panel_role", rl);
+          setRole(rl);
+          if (j.name) { sessionStorage.setItem("interia_panel_name", j.name); setUserName(j.name); }
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [tab, setTab] = useState(() => { try { return localStorage.getItem("interia_panel_tab") || "today"; } catch { return "today"; } });
   const [navOpen, setNavOpen] = useState(true);
   useEffect(() => { try { localStorage.setItem("interia_panel_tab", tab); } catch (e) {} }, [tab]);
