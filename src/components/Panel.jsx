@@ -981,7 +981,7 @@ export default function Panel() {
   useEffect(() => { try { localStorage.setItem("interia_panel_tab", tab); } catch (e) {} }, [tab]);
   // A&R не может оказаться на скрытой вкладке (напр. сохранённой в localStorage) — уводим на «Поиск артистов».
   useEffect(() => {
-    if (role === "ar" && !["tasks_ar", "search", "bible"].includes(tab)) setTab("search");
+    if (role === "ar" && !["tasks_ar", "search"].includes(tab)) setTab("search");
   }, [role, tab]);
   const [releases, setReleases] = useShared("releases", []);
   const [tasks, setTasks] = useShared("tasks", []);
@@ -1039,8 +1039,8 @@ export default function Panel() {
         {/* Навигация — закрываемая */}
         {(() => {
           const ALL_TABS = [["today","🏠 Сегодня"],["artists","🎛 Пульт артистов"],["dashboard","Дашборд"],["releases","Релизы"],["tasks","Задачи"],["tasks_ar","Задачи A&R"],["social","📣 Соцсети"],["search","🔎 Поиск артистов"],["bible","📚 База знаний"]];
-          // A&R видит только свои 3 вкладки.
-          const AR_ALLOWED = ["tasks_ar", "search", "bible"];
+          // A&R видит только свои вкладки.
+          const AR_ALLOWED = ["tasks_ar", "search"];
           const TABS = role === "ar" ? ALL_TABS.filter(([id]) => AR_ALLOWED.includes(id)) : ALL_TABS;
           const activeLabel = TABS.find(([id]) => id === tab)?.[1] || tab;
           return (
